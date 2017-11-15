@@ -39,7 +39,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		persister := persist.FileSystem{
-			Root: ".",
+			Root: repoLocation,
 		}
 		loader := persist.DefaultLoader{
 			Fetcher: persister,
@@ -51,7 +51,7 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
-		latestTransaction, err := loader.LoadTransaction(context.Background(), *currentID)
+		latestTransaction, err := loader.LoadTransaction(context.Background(), currentID)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Not able to read latest transaction from disk.")
 			os.Exit(1)
