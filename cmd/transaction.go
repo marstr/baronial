@@ -25,9 +25,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var comment string
-var merchant string
-var tranTime time.Time
+var (
+	account  string
+	amount   float64
+	target   string
+	comment  string
+	merchant string
+	tranTime time.Time
+)
 
 // transactionCmd represents the transaction command
 var transactionCmd = &cobra.Command{
@@ -40,6 +45,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		roundedAmount := int64(amount + .5)
+
 		fs := persist.FileSystem{
 			Root: repoLocation,
 		}
@@ -59,10 +67,17 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
+		updatedAcc, ok := ltsAcc.AdjustBalance(account, roundedAmount)
+		if !ok {
+			fmt.Fprintf(os.Stderr, "Couldn't find the Account %q", account)
+			os.Exit(1)
+		}
+
 		// TODO modify this to an updated Budget that has been impacted by the transaction.
 		updatedBudg := ltsBudg
 
 		updatedState := ltsState.WithBudget(updatedBudg.ID())
+		updatedState = updatedState.WithAccounts(updatedAcc.ID())
 
 		created := envelopes.Transaction{}.WithParent(ltsTran.ID())
 		created = created.WithComment(comment)
@@ -92,6 +107,9 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// transactionCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	transactionCmd.Flags().StringVar(&merchant, "merchant", "", "The merchant associated with this transaction.")
-	transactionCmd.Flags().StringVar(&comment, "comment", "", "The comment associated with this comment.")
+	transactionCmd.Flags().StringVarP(&merchant, "merchant", "m", "", "The merchant associated with this transaction.")
+	transactionCmd.Flags().StringVarP(&comment, "comment", "c", "", "The comment associated with this comment.")
+	transactionCmd.Flags().Float64VarP(&amount, "amount", "a", 0, "The amount of money transferred between accounts or budgets.")
+	transactionCmd.Flags().StringVarP(&account, "account", "i", "", "The account(s) that were impacted by this account.")
+	transactionCmd.Flags().StringVarP(&target, "budget", "b", "#", "The budget(s) that should be impacted by the added transaction.")
 }

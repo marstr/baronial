@@ -63,6 +63,12 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
+		latestAccounts, err := loader.LoadAccounts(context.Background(), latestState.Accounts())
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Not able to read latest accounts from disk.")
+			os.Exit(1)
+		}
+
 		latestBudget, err := loader.LoadBudget(context.Background(), latestState.Budget())
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Not able to parse latest budget.")
@@ -79,7 +85,6 @@ to quickly create a Cobra application.`,
 			for name := range latestChildren {
 				childNames = append(childNames, name)
 			}
-
 			sort.Strings(childNames)
 
 			fmt.Println("Children:")
@@ -87,6 +92,22 @@ to quickly create a Cobra application.`,
 				fmt.Printf("\t%s: $%0.2f\n", currentName, float64(latestChildren[currentName].RecursiveBalance())/100)
 			}
 		}
+
+		realizedAccounts := latestAccounts.AsMap()
+
+		if len(realizedAccounts) > 0 {
+			accountNames := make([]string, 0, len(realizedAccounts))
+			for name := range realizedAccounts {
+				accountNames = append(accountNames, name)
+			}
+			sort.Strings(accountNames)
+
+			fmt.Println("Accounts:")
+			for _, currentName := range accountNames {
+				fmt.Printf("\t%s: $%0.2f\n", currentName, float64(realizedAccounts[currentName])/100)
+			}
+		}
+
 	},
 }
 
