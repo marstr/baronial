@@ -25,8 +25,6 @@ import (
 
 var cfgFile string
 
-var repoLocation string
-
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "ledger",
@@ -58,7 +56,10 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.ledger.yaml)")
-	RootCmd.PersistentFlags().StringVarP(&repoLocation, "location", "l", ".", "path to the ledger to be operated on. (default is \".\")")
+	RootCmd.PersistentFlags().StringP("location", "l", ".", "path to the ledger to be operated on. (default is \".\")")
+	viper.BindPFlag("location", RootCmd.PersistentFlags().Lookup("location"))
+
+	viper.SetDefault("location", ".")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -67,6 +68,7 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
@@ -82,11 +84,11 @@ func initConfig() {
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".ledger")
 	}
-
+	viper.SetEnvPrefix("ledger")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to use config file %q: %v\n", viper.ConfigFileUsed(), err)
 	}
 }

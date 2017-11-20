@@ -22,8 +22,8 @@ import (
 
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/randname"
-
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -55,7 +55,7 @@ to quickly create a Cobra application.`,
 		}
 
 		fs := persist.FileSystem{
-			Root: repoLocation,
+			Root: viper.GetString("location"),
 		}
 
 		l := persist.DefaultLoader{
@@ -116,5 +116,5 @@ func init() {
 
 	accountCmd.Flags().Float64VarP(&initialBalance, "balance", "b", 0, "The initial balance of the account. (default is $0.00)")
 	accountCmd.Flags().StringVarP(&name, "name", "n", "", "The name that should be used to reference this account. If the name is left empty, the default will be assumed. (default is a random name)")
-	accountCmd.Flags().StringVar(&accComment, "comment", "", "A comment to associate with the adding of this account.")
+	accountCmd.Flags().StringVarP(&accComment, "message", "m", "", "A message to associate with the adding of this account.")
 }

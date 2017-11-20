@@ -23,6 +23,7 @@ import (
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -49,8 +50,9 @@ to quickly create a Cobra application.`,
 		roundedAmount := int64(amount + .5)
 
 		fs := persist.FileSystem{
-			Root: repoLocation,
+			Root: viper.GetString("location"),
 		}
+		fmt.Println("FS Root: ", fs.Root)
 		loader := persist.DefaultLoader{
 			Fetcher: fs,
 		}

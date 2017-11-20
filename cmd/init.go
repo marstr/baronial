@@ -24,6 +24,7 @@ import (
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // initCmd represents the init command
@@ -33,10 +34,9 @@ var initCmd = &cobra.Command{
 	Long: `Creates a ledger directory in the directory specified, or in the current directory
 if none is specified.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		targetLocation := "."
+		targetLocation := viper.GetString("location")
 
 		if argCount := len(args); argCount == 1 {
-			targetLocation = args[0]
 			err := os.MkdirAll(targetLocation, os.ModePerm)
 			if err != nil {
 				abs, _ := filepath.Abs(targetLocation)

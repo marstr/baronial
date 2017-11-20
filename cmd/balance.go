@@ -21,8 +21,8 @@ import (
 	"sort"
 
 	"github.com/marstr/envelopes/persist"
-
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var useDebug bool
@@ -39,7 +39,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		persister := persist.FileSystem{
-			Root: repoLocation,
+			Root: viper.GetString("location"),
 		}
 		loader := persist.DefaultLoader{
 			Fetcher: persister,
