@@ -48,7 +48,7 @@ to quickly create a Cobra application.`,
 			os.Exit(exitStatus)
 		}()
 
-		roundedAmount := int64(amount + .5)
+		roundedAmount := int64(initialBalance*100 + .5)
 
 		if name == "" {
 			name = randname.Generate()
