@@ -28,7 +28,6 @@ import (
 
 var (
 	initialBalance float64
-	name           string
 	accComment     string
 )
 
@@ -42,6 +41,7 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		exitStatus := 1
 		defer func() {
@@ -50,6 +50,7 @@ to quickly create a Cobra application.`,
 
 		roundedAmount := int64(initialBalance*100 + .5)
 
+		name := args[0]
 		if name == "" {
 			name = randname.Generate()
 		}
@@ -115,6 +116,5 @@ func init() {
 	// accountCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	accountCmd.Flags().Float64VarP(&initialBalance, "balance", "b", 0, "The initial balance of the account. (default is $0.00)")
-	accountCmd.Flags().StringVarP(&name, "name", "n", "", "The name that should be used to reference this account. If the name is left empty, the default will be assumed. (default is a random name)")
 	accountCmd.Flags().StringVarP(&accComment, "message", "m", "", "A message to associate with the adding of this account.")
 }
