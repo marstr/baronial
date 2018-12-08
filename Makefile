@@ -1,6 +1,6 @@
 SRC = $(shell find . -name '*.go' -type f)
 
-ledger: ${SRC}
+ledger: ${SRC} .git/HEAD
 	go build -ldflags "-X github.com/marstr/ledger/cmd.revision=$(shell git rev-parse HEAD)"
 
 .PHONY: test
