@@ -2,12 +2,13 @@ package budget
 
 import (
 	"context"
-	"github.com/marstr/envelopes"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/marstr/envelopes"
 )
 
 func Load(ctx context.Context, dirname string) (retval envelopes.Budget, err error) {
@@ -63,7 +64,8 @@ func Load(ctx context.Context, dirname string) (retval envelopes.Budget, err err
 				return
 			}
 
-			bal, err = envelopes.ParseAmount(string(contents))
+			trimmed := strings.TrimSpace(string(contents))
+			bal, err = envelopes.ParseAmount(trimmed)
 			if err != nil {
 				return
 			}

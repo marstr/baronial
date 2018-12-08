@@ -16,8 +16,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"github.com/marstr/envelopes"
+	"io"
+	"os"
+	"time"
 
+	"github.com/marstr/ledger/internal/budget"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -36,7 +42,23 @@ var balanceCmd = &cobra.Command{
 	Aliases: []string{"bal", "b"},
 	Short:   "Scours a ledger directory (or subdirectory) for balance information.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("balance called")
+		ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+		defer cancel()
+
+		var targetDir string
+		if len(args) > 0 {
+			targetDir = args[0]
+		} else {
+			targetDir = "."
+		}
+
+		budget, err := budget.Load(ctx, targetDir)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "FATAL: ", err)
+			return
+		}
+
+		writeBalances(ctx, os.Stdout, budget)
 	},
 	Args: cobra.MaximumNArgs(1),
 }
@@ -62,4 +84,18 @@ func init() {
 		balanceDepthShorthand,
 		uint8(balanceConfig.GetInt(balanceDepthFlag)),
 		`How recursively deep the balance tree should be shown before being truncated.`)
+}
+
+func writeBalances(_ context.Context, output io.Writer, budget envelopes.Budget) (err error) {
+	fmt.Fprintln(output,"Total: ", envelopes.FormatAmount(budget.RecursiveBalance()))
+	fmt.Fprintln(output, "Balance: ", envelopes.FormatAmount(budget.Balance()))
+
+	children := budget.Children()
+	if len(children) > 0 {
+		fmt.Fprintln(output, "Children:")
+		for name, child := range budget.Children() {
+			fmt.Fprintf(output, "\t%s: %s\n", name, envelopes.FormatAmount(child.RecursiveBalance()))
+		}
+	}
+	return nil
 }
