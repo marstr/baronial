@@ -1,126 +1,65 @@
-// Copyright © 2017 Martin Strobel
+// Copyright © 2018 Martin Strobel
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"os"
-	"sort"
 
-	"github.com/marstr/envelopes/persist"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var useDebug bool
+const (
+	balanceDepthFlag      = "depth"
+	balanceDepthShorthand = "d"
+	balanceDepthDefault   = 1
+)
 
-// statusCmd represents the status command
-var statusCmd = &cobra.Command{
-	Use:   "balance",
-	Short: "Displays the current balance of each Budget and Account",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+var balanceConfig *viper.Viper
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+// balanceCmd represents the balance command
+var balanceCmd = &cobra.Command{
+	Use:     "balance [budget]",
+	Aliases: []string{"bal", "b"},
+	Short:   "Scours a ledger directory (or subdirectory) for balance information.",
 	Run: func(cmd *cobra.Command, args []string) {
-		persister := persist.FileSystem{
-			Root: viper.GetString("location"),
-		}
-		loader := persist.DefaultLoader{
-			Fetcher: persister,
-		}
-
-		currentID, err := persister.LoadCurrent(context.Background())
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Could not find current ledger status.")
-			os.Exit(1)
-		}
-
-		latestTransaction, err := loader.LoadTransaction(context.Background(), currentID)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Not able to read latest transaction from disk.")
-			os.Exit(1)
-		}
-
-		latestState, err := loader.LoadState(context.Background(), latestTransaction.State())
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Not able to read latest state from disk.")
-			os.Exit(1)
-		}
-
-		latestAccounts, err := loader.LoadAccounts(context.Background(), latestState.Accounts())
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Not able to read latest accounts from disk.")
-			os.Exit(1)
-		}
-
-		latestBudget, err := loader.LoadBudget(context.Background(), latestState.Budget())
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Not able to parse latest budget.")
-			os.Exit(1)
-		}
-
-		fmt.Printf("Total Balance: %d\n", latestBudget.RecursiveBalance())
-
-		fmt.Printf("Balance: %d\n", latestBudget.Balance())
-
-		latestChildren := latestBudget.Children()
-		if len(latestChildren) > 0 {
-			childNames := make([]string, 0, len(latestChildren))
-			for name := range latestChildren {
-				childNames = append(childNames, name)
-			}
-			sort.Strings(childNames)
-
-			fmt.Println("Children:")
-			for _, currentName := range childNames {
-				fmt.Printf("\t%s: $%0.2f\n", currentName, float64(latestChildren[currentName].RecursiveBalance())/100)
-			}
-		}
-
-		realizedAccounts := latestAccounts.AsMap()
-
-		if len(realizedAccounts) > 0 {
-			accountNames := make([]string, 0, len(realizedAccounts))
-			for name := range realizedAccounts {
-				accountNames = append(accountNames, name)
-			}
-			sort.Strings(accountNames)
-
-			fmt.Println("Accounts:")
-			for _, currentName := range accountNames {
-				fmt.Printf("\t%s: $%0.2f\n", currentName, float64(realizedAccounts[currentName])/100)
-			}
-		}
-
+		fmt.Println("balance called")
 	},
+	Args: cobra.MaximumNArgs(1),
 }
 
 func init() {
-	RootCmd.AddCommand(statusCmd)
+	balanceConfig = viper.New()
+	balanceConfig.SetDefault(balanceDepthFlag, balanceDepthDefault)
+
+	rootCmd.AddCommand(balanceCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// statusCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// balanceCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// statusCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// balanceCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	balanceCmd.Flags().Uint8P(
+		balanceDepthFlag,
+		balanceDepthShorthand,
+		uint8(balanceConfig.GetInt(balanceDepthFlag)),
+		`How recursively deep the balance tree should be shown before being truncated.`)
 }
