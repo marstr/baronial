@@ -52,13 +52,13 @@ var balanceCmd = &cobra.Command{
 			targetDir = "."
 		}
 
-		budget, err := budget.Load(ctx, targetDir)
+		bdg, err := budget.Load(ctx, targetDir)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "FATAL: ", err)
 			return
 		}
 
-		writeBalances(ctx, os.Stdout, budget)
+		writeBalances(ctx, os.Stdout, bdg)
 	},
 	Args: cobra.MaximumNArgs(1),
 }

@@ -11,9 +11,11 @@ import (
 	"github.com/marstr/envelopes"
 )
 
-func Load(ctx context.Context, dirname string) (retval envelopes.Budget, err error) {
-	const cashName = "cash.txt"
+const (
+	cashName = "cash.txt"
+)
 
+func Load(ctx context.Context, dirname string) (retval envelopes.Budget, err error) {
 	var entries []os.FileInfo
 	var children map[string]envelopes.Budget
 
