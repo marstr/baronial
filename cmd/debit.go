@@ -26,9 +26,10 @@ import (
 )
 
 var debitCmd = &cobra.Command{
-	Use:   `debit {budget} {amount}`,
-	Short: `Removes funds from a category of spending.`,
-	Args:  cobra.ExactArgs(2),
+	Use:     `debit {budget} {amount}`,
+	Aliases: []string{"d"},
+	Short:   `Removes funds from a category of spending.`,
+	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
