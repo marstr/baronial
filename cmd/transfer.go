@@ -25,35 +25,48 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var debitCmd = &cobra.Command{
-	Use:     `debit {budget} {amount}`,
-	Aliases: []string{"d"},
-	Short:   `Removes funds from a category of spending.`,
-	Args:    cobra.ExactArgs(2),
+var transferCmd = &cobra.Command{
+	Use:     "transfer {src} {dest} {amount}",
+	Aliases: []string{"t", "tran"},
+	Short:   "Moves funds from one category of spending to another.",
+	Args:    cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		targetDir := args[0]
-		bdg, err := budget.Load(ctx, targetDir)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		rawMagnitude := args[1]
+		rawSrc := args[0]
+		rawDest := args[1]
+		rawMagnitude := args[2]
 		magnitude, err := envelopes.ParseAmount(rawMagnitude)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		bdg = bdg.DecreaseBalance(magnitude)
-		err = budget.Write(ctx, targetDir, bdg)
+		src, err := budget.Load(ctx, rawSrc)
 		if err != nil {
 			logrus.Fatal(err)
+		}
+
+		dest, err := budget.Load(ctx, rawDest)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		src = src.DecreaseBalance(magnitude)
+		dest = dest.IncreaseBalance(magnitude)
+
+		err = budget.Write(ctx, rawSrc, src)
+		if err != nil {
+			logrus.Error(err)
+		}
+
+		err = budget.Write(ctx, rawDest, dest)
+		if err != nil {
+			logrus.Error(err)
 		}
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(debitCmd)
+	rootCmd.AddCommand(transferCmd)
 }

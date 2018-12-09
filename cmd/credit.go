@@ -47,7 +47,10 @@ var creditCmd = &cobra.Command{
 		}
 
 		bdg = bdg.IncreaseBalance(magnitude)
-		budget.Write(ctx, targetDir, bdg)
+		err = budget.Write(ctx, targetDir, bdg)
+		if err != nil {
+			logrus.Fatal(err)
+		}
 	},
 }
 
