@@ -3,8 +3,17 @@ TEST_SRC = $(shell find . -name '*_test.go' -type f)
 
 REVISION = $(shell ./get-revision.sh)
 
-baronial: ${SRC} .git/HEAD go.sum
-	go build -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION}"
+.PHONY: all
+all: bin/darwin/baronial bin/linux/baronial bin/windows/baronial.exe
+
+bin/darwin/baronial: ${SRC} .git/HEAD go.sum
+	GOOS=darwin go build -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION}" -o bin/darwin/baronial
+
+bin/linux/baronial: ${SRC} .git/HEAD go.sum
+	GOOS=linux go build -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION}" -o bin/linux/baronial
+
+bin/windows/baronial.exe: ${SRC} .git/HEAD go.sum
+	GOOS=windows go build -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION}" -o bin/windows/baronial.exe
 
 go.sum: go.mod
 	go mod verify
@@ -24,4 +33,4 @@ install: baronial
 
 .PHONY: clean
 clean:
-	rm baronial
+	rm -rf bin
