@@ -18,9 +18,10 @@ package index
 import (
 	"context"
 	"fmt"
-	"github.com/marstr/envelopes"
 	"os"
 	"path/filepath"
+
+	"github.com/marstr/envelopes"
 )
 
 // WriteBudget takes the memoized Budget and commits it to the current baronial index.

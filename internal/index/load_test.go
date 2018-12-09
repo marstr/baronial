@@ -17,9 +17,10 @@ package index
 
 import (
 	"context"
-	"github.com/mitchellh/go-homedir"
 	"testing"
 	"time"
+
+	"github.com/mitchellh/go-homedir"
 )
 
 const (
