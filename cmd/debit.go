@@ -19,14 +19,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/marstr/baronial/internal/budget"
+	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 var debitCmd = &cobra.Command{
-	Use:     `debit {budget} {amount}`,
+	Use:     `debit {account} {budget} {amount}`,
 	Aliases: []string{"d"},
 	Short:   `Removes funds from a category of spending.`,
 	Args:    cobra.ExactArgs(2),
@@ -35,7 +35,7 @@ var debitCmd = &cobra.Command{
 		defer cancel()
 
 		targetDir := args[0]
-		bdg, err := budget.Load(ctx, targetDir)
+		bdg, err := index.Load(ctx, targetDir)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -47,7 +47,7 @@ var debitCmd = &cobra.Command{
 		}
 
 		bdg = bdg.DecreaseBalance(magnitude)
-		err = budget.Write(ctx, targetDir, bdg)
+		err = index.Write(ctx, targetDir, bdg)
 		if err != nil {
 			logrus.Fatal(err)
 		}

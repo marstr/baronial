@@ -19,7 +19,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/marstr/baronial/internal/budget"
+	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -42,12 +42,12 @@ var transferCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		src, err := budget.Load(ctx, rawSrc)
+		src, err := index.Load(ctx, rawSrc)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		dest, err := budget.Load(ctx, rawDest)
+		dest, err := index.Load(ctx, rawDest)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -55,12 +55,12 @@ var transferCmd = &cobra.Command{
 		src = src.DecreaseBalance(magnitude)
 		dest = dest.IncreaseBalance(magnitude)
 
-		err = budget.Write(ctx, rawSrc, src)
+		err = index.Write(ctx, rawSrc, src)
 		if err != nil {
 			logrus.Error(err)
 		}
 
-		err = budget.Write(ctx, rawDest, dest)
+		err = index.Write(ctx, rawDest, dest)
 		if err != nil {
 			logrus.Error(err)
 		}

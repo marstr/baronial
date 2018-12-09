@@ -22,7 +22,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/marstr/baronial/internal/budget"
+	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -35,11 +35,11 @@ const (
 	balanceDepthDefault   = 1
 )
 
-var balanceConfig *viper.Viper
+var balanceConfig = viper.New()
 
 // balanceCmd represents the balance command
 var balanceCmd = &cobra.Command{
-	Use:     "balance [budget]",
+	Use:     "balance [index]",
 	Aliases: []string{"bal", "b"},
 	Short:   "Scours a baronial directory (or subdirectory) for balance information.",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -53,7 +53,7 @@ var balanceCmd = &cobra.Command{
 			targetDir = "."
 		}
 
-		bdg, err := budget.Load(ctx, targetDir)
+		bdg, err := index.Load(ctx, targetDir)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -64,7 +64,6 @@ var balanceCmd = &cobra.Command{
 }
 
 func init() {
-	balanceConfig = viper.New()
 	balanceConfig.SetDefault(balanceDepthFlag, balanceDepthDefault)
 
 	rootCmd.AddCommand(balanceCmd)

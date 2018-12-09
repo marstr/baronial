@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package budget
+package index
 
 import (
 	"context"
@@ -31,7 +31,7 @@ func TestLoad(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	loc, err := homedir.Expand("~/OneDrive/budget")
+	loc, err := homedir.Expand("~/OneDrive/finances/budget")
 	if err != nil {
 		t.Error(err)
 		return

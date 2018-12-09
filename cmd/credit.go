@@ -19,11 +19,19 @@ import (
 	"context"
 	"time"
 
-	"github.com/marstr/baronial/internal/budget"
+	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
+
+const (
+	creditAccountFlag      = "account"
+	creditAccountShorthand = "a"
+)
+
+var creditConfig = viper.New()
 
 var creditCmd = &cobra.Command{
 	Use:     "credit {budget} {amount}",
@@ -34,8 +42,8 @@ var creditCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		targetDir := args[0]
-		bdg, err := budget.Load(ctx, targetDir)
+		rawBudget := args[0]
+		bdg, err := index.Load(ctx, rawBudget)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -47,7 +55,7 @@ var creditCmd = &cobra.Command{
 		}
 
 		bdg = bdg.IncreaseBalance(magnitude)
-		err = budget.Write(ctx, targetDir, bdg)
+		err = index.Write(ctx, rawBudget, bdg)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -56,4 +64,12 @@ var creditCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(creditCmd)
+
+	creditCmd.Flags().StringP(
+		creditAccountFlag,
+		creditAccountShorthand,
+		creditConfig.GetString(creditAccountFlag),
+		`The account that was credited with more funds.`)
+
+	creditConfig.BindPFlags(creditCmd.Flags())
 }
