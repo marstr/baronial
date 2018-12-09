@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"context"
-	"fmt"
+	"time"
+
 	"github.com/marstr/envelopes"
 	"github.com/marstr/ledger/internal/budget"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
-	"time"
 )
 
 var debitCmd = &cobra.Command{
@@ -21,15 +21,13 @@ var debitCmd = &cobra.Command{
 		targetDir := args[0]
 		bdg, err := budget.Load(ctx, targetDir)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "FATAL: ", err)
-			return
+			logrus.Fatal(err)
 		}
 
 		rawMagnitude := args[1]
 		magnitude, err := envelopes.ParseAmount(rawMagnitude)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "FATAL: ", err)
-			return
+			logrus.Fatal(err)
 		}
 
 		bdg = bdg.DecreaseBalance(magnitude)

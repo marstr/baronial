@@ -18,12 +18,13 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/marstr/envelopes"
 	"io"
 	"os"
 	"time"
 
+	"github.com/marstr/envelopes"
 	"github.com/marstr/ledger/internal/budget"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -42,7 +43,7 @@ var balanceCmd = &cobra.Command{
 	Aliases: []string{"bal", "b"},
 	Short:   "Scours a ledger directory (or subdirectory) for balance information.",
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		var targetDir string
@@ -54,8 +55,7 @@ var balanceCmd = &cobra.Command{
 
 		bdg, err := budget.Load(ctx, targetDir)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "FATAL: ", err)
-			return
+			logrus.Fatal(err)
 		}
 
 		writeBalances(ctx, os.Stdout, bdg)
@@ -87,7 +87,7 @@ func init() {
 }
 
 func writeBalances(_ context.Context, output io.Writer, budget envelopes.Budget) (err error) {
-	fmt.Fprintln(output,"Total: ", envelopes.FormatAmount(budget.RecursiveBalance()))
+	fmt.Fprintln(output, "Total: ", envelopes.FormatAmount(budget.RecursiveBalance()))
 	fmt.Fprintln(output, "Balance: ", envelopes.FormatAmount(budget.Balance()))
 
 	children := budget.Children()
