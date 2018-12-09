@@ -27,7 +27,7 @@ const (
 	defaultTimeout = 4 * 24 * time.Hour
 )
 
-func TestLoad(t *testing.T) {
+func TestLoadBudget(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -37,7 +37,7 @@ func TestLoad(t *testing.T) {
 		return
 	}
 
-	result, err := Load(ctx, loc)
+	result, err := LoadBudget(ctx, loc)
 	if err != nil {
 		t.Error(err)
 		return

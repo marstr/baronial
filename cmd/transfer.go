@@ -42,12 +42,12 @@ var transferCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		src, err := index.Load(ctx, rawSrc)
+		src, err := index.LoadBudget(ctx, rawSrc)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		dest, err := index.Load(ctx, rawDest)
+		dest, err := index.LoadBudget(ctx, rawDest)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -55,12 +55,12 @@ var transferCmd = &cobra.Command{
 		src = src.DecreaseBalance(magnitude)
 		dest = dest.IncreaseBalance(magnitude)
 
-		err = index.Write(ctx, rawSrc, src)
+		err = index.WriteBudget(ctx, rawSrc, src)
 		if err != nil {
 			logrus.Error(err)
 		}
 
-		err = index.Write(ctx, rawDest, dest)
+		err = index.WriteBudget(ctx, rawDest, dest)
 		if err != nil {
 			logrus.Error(err)
 		}

@@ -30,7 +30,8 @@ const (
 	cashName = "cash.txt"
 )
 
-func Load(ctx context.Context, dirname string) (retval envelopes.Budget, err error) {
+// LoadBudget reads the budget portion of the current baronial index into memory.
+func LoadBudget(ctx context.Context, dirname string) (retval envelopes.Budget, err error) {
 	var entries []os.FileInfo
 	var children map[string]envelopes.Budget
 
@@ -56,7 +57,7 @@ func Load(ctx context.Context, dirname string) (retval envelopes.Budget, err err
 				continue
 			}
 
-			child, err = Load(ctx, fullEntryName)
+			child, err = LoadBudget(ctx, fullEntryName)
 			if err != nil {
 				return
 			}

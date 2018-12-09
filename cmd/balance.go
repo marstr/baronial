@@ -53,7 +53,7 @@ var balanceCmd = &cobra.Command{
 			targetDir = "."
 		}
 
-		bdg, err := index.Load(ctx, targetDir)
+		bdg, err := index.LoadBudget(ctx, targetDir)
 		if err != nil {
 			logrus.Fatal(err)
 		}

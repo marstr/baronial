@@ -35,7 +35,7 @@ var debitCmd = &cobra.Command{
 		defer cancel()
 
 		targetDir := args[0]
-		bdg, err := index.Load(ctx, targetDir)
+		bdg, err := index.LoadBudget(ctx, targetDir)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -47,7 +47,7 @@ var debitCmd = &cobra.Command{
 		}
 
 		bdg = bdg.DecreaseBalance(magnitude)
-		err = index.Write(ctx, targetDir, bdg)
+		err = index.WriteBudget(ctx, targetDir, bdg)
 		if err != nil {
 			logrus.Fatal(err)
 		}

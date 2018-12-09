@@ -43,7 +43,7 @@ var creditCmd = &cobra.Command{
 		defer cancel()
 
 		rawBudget := args[0]
-		bdg, err := index.Load(ctx, rawBudget)
+		bdg, err := index.LoadBudget(ctx, rawBudget)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -55,7 +55,7 @@ var creditCmd = &cobra.Command{
 		}
 
 		bdg = bdg.IncreaseBalance(magnitude)
-		err = index.Write(ctx, rawBudget, bdg)
+		err = index.WriteBudget(ctx, rawBudget, bdg)
 		if err != nil {
 			logrus.Fatal(err)
 		}
