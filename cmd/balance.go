@@ -22,8 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/marstr/baronial/internal/budget"
 	"github.com/marstr/envelopes"
-	"github.com/marstr/ledger/internal/budget"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -41,7 +41,7 @@ var balanceConfig *viper.Viper
 var balanceCmd = &cobra.Command{
 	Use:     "balance [budget]",
 	Aliases: []string{"bal", "b"},
-	Short:   "Scours a ledger directory (or subdirectory) for balance information.",
+	Short:   "Scours a baronial directory (or subdirectory) for balance information.",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()

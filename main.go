@@ -15,7 +15,7 @@
 
 package main
 
-import "github.com/marstr/ledger/cmd"
+import "github.com/marstr/baronial/cmd"
 
 func main() {
 	cmd.Execute()

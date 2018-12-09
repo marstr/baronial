@@ -1,4 +1,4 @@
-module github.com/marstr/ledger
+module github.com/marstr/baronial
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect

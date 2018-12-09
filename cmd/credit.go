@@ -16,44 +16,41 @@
 package cmd
 
 import (
-	"fmt"
-	"runtime"
+	"context"
+	"time"
 
+	"github.com/marstr/baronial/internal/budget"
+	"github.com/marstr/envelopes"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-var (
-	version  string
-	revision string
-)
-
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Prints version information about baronial.",
+var creditCmd = &cobra.Command{
+	Use:     "credit {budget} {amount}",
+	Aliases: []string{"c"},
+	Short:   "Makes funds available for a category of spending.",
+	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Version: ", version)
-		fmt.Printf("System: %s/%s\n", runtime.GOOS, runtime.GOARCH)
-		fmt.Println("Go: ", runtime.Version())
-		fmt.Println("Source Revision: ", revision)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
-		fmt.Println()
+		targetDir := args[0]
+		bdg, err := budget.Load(ctx, targetDir)
+		if err != nil {
+			logrus.Fatal(err)
+		}
 
-		fmt.Println("baronial Copyright (C) Martin Strobel 2018")
-		fmt.Println("Licensed under the GNU General Public License v3")
-		fmt.Println("A full copy of the license may be found here:")
-		fmt.Println("https://www.gnu.org/licenses/gpl-3.0.en.html")
+		rawMagnitude := args[1]
+		magnitude, err := envelopes.ParseAmount(rawMagnitude)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		bdg = bdg.IncreaseBalance(magnitude)
+		budget.Write(ctx, targetDir, bdg)
 	},
-	Args: cobra.NoArgs,
 }
 
 func init() {
-	if version == "" {
-		version = "unknown"
-	}
-
-	if revision == "" {
-		revision = "unknown"
-	}
-
-	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(creditCmd)
 }
