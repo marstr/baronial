@@ -1,0 +1,17 @@
+ARG BASE_IMAGE=golang:stretch
+
+FROM ${BASE_IMAGE} AS builder
+
+WORKDIR /usr/local/src/baronial
+
+COPY . .
+
+RUN make bin/linux/baronial
+
+CMD /bin/bash
+
+FROM ${BASE_IMAGE} AS execution
+
+COPY --from=builder /usr/local/src/baronial/bin/linux/baronial /usr/local/bin/
+
+CMD /bin/bash
