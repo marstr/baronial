@@ -1,0 +1,20 @@
+ARG BASE_IMAGE=golang:alpine
+
+FROM ${BASE_IMAGE} AS builder
+
+RUN apk add --no-cache --update alpine-sdk gcc make git
+
+WORKDIR /usr/local/src/baronial
+
+COPY . .
+RUN go mod download
+
+RUN make install
+
+CMD /bin/bash
+
+FROM alpine AS execution
+
+COPY --from=builder /go/bin/baronial /usr/local/bin
+
+CMD /bin/sh

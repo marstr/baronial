@@ -1,7 +1,7 @@
 SRC = $(shell find . -name '*.go' -type f)
 TEST_SRC = $(shell find . -name '*_test.go' -type f)
 
-REVISION = $(shell ./get-revision.sh)
+REVISION = $(shell sh ./get-revision.sh)
 
 .PHONY: all
 all: darwin linux windows
