@@ -1,6 +1,23 @@
 phases:
+- phase: Phase_0
+  displayName: Ensure Formatting, Lint
+
+  condition: succeeded()
+  queue:
+    name: Hosted macOS
+
+  steps:
+    - task: GoTool@0
+      displayName: 'Use Go 1.11'
+      inputs:
+        version 1.11
+    - script: |
+        set -ev
+        make lint
+
 - phase: Phase_1
   displayName: Execute Tests on Linux
+  dependsOn: Phase_0
 
   condition: succeeded()
   queue:
@@ -12,9 +29,6 @@ phases:
     inputs:
       version: 1.11
   - script: |
-      go get -u -insecure github.com/x/lint/golint
-    displayName: 'Install golint'
-  - script: |
       go mod download
     displayName: 'Download Dependencies'
   - script: |
@@ -24,6 +38,7 @@ phases:
 
 - phase: Phase_2
   displayName: Execute Tests on Windows
+  dependsOn: Phase_0
 
   condition: succeeded()
   queue:
@@ -45,6 +60,7 @@ phases:
 
 - phase: Phase_3
   displayName: Execute Tests on Mac
+  dependsOn: Phase_0
 
   condition: succeeded()
   queue:
@@ -60,5 +76,5 @@ phases:
     displayName: 'Download Dependencies'
   - script: |
       set -ev
-      go test ./...
+      make test
     displayName: 'Execute Tests'
