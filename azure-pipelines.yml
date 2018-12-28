@@ -31,6 +31,7 @@ phases:
   - task: Go@0
     inputs:
       command: test
+      arguments: ./...
     displayName: 'Execute Tests'
 
 - phase: Phase_3
