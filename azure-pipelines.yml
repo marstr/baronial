@@ -13,6 +13,7 @@ phases:
         version: 1.11
     - script: |
         go get -u golang.org/x/lint/golint
+        export PATH=$PATH:$GOPATH/bin
       displayName: 'Install golint'
     - script: |
         set -ev
