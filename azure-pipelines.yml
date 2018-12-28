@@ -1,0 +1,51 @@
+phases:
+- phase: Phase_1
+  displayName: Execute Tests on Linux
+
+  condition: succeeded()
+  queue:
+    name: Hosted Ubuntu 1604
+
+  steps:
+  - task: GoTool@0
+    displayName: 'Use Go 1.11'
+    inputs:
+      version: 1.11
+  - script: |
+      set -ev
+      make test
+    displayName: 'Execute Tests'
+
+- phase: Phase_2
+  displayName: Execute Tests on Windows
+
+  condition: succeeded()
+  queue:
+      name: Hosted
+
+  steps:
+  - task: GoTool@0
+    displayName: 'Use Go 1.11'
+    inputs:
+      version: 1.11
+  - task: Go@0
+    inputs:
+      command: test
+    displayName: 'Execute Tests'
+
+- phase: Phase_3
+  displayName: Execute Tests on Mac
+
+  condition: succeeded()
+  queue:
+    name: Hosted macOS
+
+  steps:
+  - task: GoTool@0
+    displayName: 'Use Go 1.11'
+    inputs:
+      version: 1.11
+  - script: |
+      set -ev
+      go test ./...
+    displayName: 'Execute Tests'
