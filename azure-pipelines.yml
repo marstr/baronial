@@ -12,6 +12,9 @@ phases:
     inputs:
       version: 1.11
   - script: |
+      go get -u github.com/x/lint/golint
+    displayName: 'Install golint'
+  - script: |
       set -ev
       make test
     displayName: 'Execute Tests'
