@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/marstr/baronial/internal/index"
@@ -53,12 +55,41 @@ var balanceCmd = &cobra.Command{
 			targetDir = "."
 		}
 
-		bdg, err := index.LoadBudget(ctx, targetDir)
+		var err error
+
+		targetDir, err = filepath.Abs(targetDir)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		writeBalances(ctx, os.Stdout, bdg)
+		root, err := index.RootDirectory(targetDir)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		root, err = filepath.Abs(root)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		var budgetDir string
+		if targetDir == root {
+			budgetDir = path.Join(targetDir, index.BudgetDir)
+		} else if _, err = index.BudgetName(targetDir); err == nil {
+			budgetDir = targetDir
+		} else {
+			logrus.Info(err)
+		}
+
+		if budgetDir != "" {
+			bdg, err := index.LoadBudget(ctx, budgetDir)
+			if err == nil {
+				writeBalances(ctx, os.Stdout, bdg)
+			} else {
+				logrus.Error(err)
+			}
+		}
+
 	},
 	Args: cobra.MaximumNArgs(1),
 }

@@ -1,3 +1,7 @@
 # Build Products
 baronial
 *.exe
+bin/
+
+# System specific filesystem junk
+.DS_Store

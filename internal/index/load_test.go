@@ -17,10 +17,10 @@ package index
 
 import (
 	"context"
+	"fmt"
+	"github.com/marstr/envelopes"
 	"testing"
 	"time"
-
-	"github.com/mitchellh/go-homedir"
 )
 
 const (
@@ -32,17 +32,72 @@ func TestLoadBudget(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	loc, err := homedir.Expand("~/OneDrive/finances/budget")
+	result, err := LoadBudget(ctx, "./testdata/test1/budget")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	result, err := LoadBudget(ctx, loc)
-	if err != nil {
-		t.Error(err)
-		return
+	want := envelopes.Balance(1234)
+
+	if got := result.Balance(); got != want {
+		t.Logf("Raw Balance:\n\tgot:  %v\n\twant: %v", got, want)
+		t.Fail()
 	}
 
-	t.Log(result)
+	if got := result.RecursiveBalance(); got != want {
+		t.Logf("Recursive Balance:\n\tgot:  %v\n\twant: %v", got, want)
+		t.Fail()
+	}
+}
+
+func TestLoadAccounts(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	testCases := []struct {
+		location string
+		expected map[string]envelopes.Balance
+	}{
+		{
+			"./testdata/test1/accounts",
+			map[string]envelopes.Balance{
+				"citi/checking": 1234,
+			},
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			result, err := LoadAccounts(ctx, tc.location)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			for _, name := range result.Names() {
+				got, _ := result.Balance(name)
+				want, ok := tc.expected[name]
+				if !ok {
+					t.Logf("unexpected budget: %s -> %v", name, got)
+					t.Fail()
+					continue
+				}
+
+				if got != want {
+					t.Logf("%s\n\tgot:  %v\n\twant: %v", name, got, want)
+					t.Fail()
+				}
+
+				delete(tc.expected, name)
+			}
+
+			for account, want := range tc.expected {
+				if !result.HasAccount(account) {
+					t.Logf("missing account: %s -> %v", account, want)
+					t.Fail()
+				}
+			}
+		})
+	}
 }
