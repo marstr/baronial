@@ -12,7 +12,7 @@ phases:
     inputs:
       version: 1.11
   - script: |
-      go get -u github.com/x/lint/golint
+      go get -u -insecure github.com/x/lint/golint
     displayName: 'Install golint'
   - script: |
       set -ev
