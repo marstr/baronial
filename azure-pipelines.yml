@@ -12,6 +12,8 @@ phases:
       inputs:
         version: 1.11
     - script: |
+        set -ev
+        echo $GOPATH
         go get -u golang.org/x/lint/golint
       env:
         PATH: $PATH:$GOPATH/bin
