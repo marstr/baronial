@@ -16,11 +16,15 @@ phases:
         mkdir -p ~/go
         export GOPATH=~/go
         export PATH=${PATH}:${GOPATH}/bin
+        echo "${GOPATH}"
         go get -u golang.org/x/lint/golint
       displayName: 'Install golint'
     - script: |
         set -ev
+        export PATH=${PATH}:${GOPATH}/bin
         make lint
+      env:
+        GOPATH: ~/go
       displayName: 'Run Linters'
 
 - phase: Phase_1
