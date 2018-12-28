@@ -17,36 +17,21 @@ package cmd
 
 import (
 	"fmt"
-	"runtime"
-
 	"github.com/spf13/cobra"
 )
 
-var (
-	version  string
-	revision string
-)
-
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Prints version information about baronial.",
+var licenseCmd = &cobra.Command{
+	Use:   "license",
+	Short: "Prints license information about baronial.",
 	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Version: ", version)
-		fmt.Printf("System: %s/%s\n", runtime.GOOS, runtime.GOARCH)
-		fmt.Println("Go: ", runtime.Version())
-		fmt.Println("Source Revision: ", revision)
+	Run: func(_ *cobra.Command, _ []string) {
+		fmt.Println("baronial Copyright (C) Martin Strobel 2018")
+		fmt.Println("Licensed under the GNU General Public License v3")
+		fmt.Println("A full copy of the license may be found here:")
+		fmt.Println("https://www.gnu.org/licenses/gpl-3.0.en.html")
 	},
 }
 
 func init() {
-	if version == "" {
-		version = "unknown"
-	}
-
-	if revision == "" {
-		revision = "unknown"
-	}
-
-	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(licenseCmd)
 }
