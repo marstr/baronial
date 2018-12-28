@@ -15,6 +15,9 @@ phases:
       go get -u -insecure github.com/x/lint/golint
     displayName: 'Install golint'
   - script: |
+      go mod download
+    displayName: 'Download Dependencies'
+  - script: |
       set -ev
       make test
     displayName: 'Execute Tests'
@@ -31,6 +34,9 @@ phases:
     displayName: 'Use Go 1.11'
     inputs:
       version: 1.11
+  - script: |
+      go mod download
+    displayName: 'Download Dependencies'
   - task: Go@0
     inputs:
       command: test
@@ -49,6 +55,9 @@ phases:
     displayName: 'Use Go 1.11'
     inputs:
       version: 1.11
+  - script: |
+      go mod download
+    displayName: 'Download Dependencies'
   - script: |
       set -ev
       go test ./...
