@@ -12,8 +12,12 @@ phases:
       inputs:
         version: 1.11
     - script: |
+        go get -u golang.org/x/lint/golint
+      displayName: 'Install golint'
+    - script: |
         set -ev
         make lint
+      displayName: 'Run Linters'
 
 - phase: Phase_1
   displayName: Execute Tests on Linux
