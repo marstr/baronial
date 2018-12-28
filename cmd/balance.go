@@ -22,6 +22,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/marstr/baronial/internal/index"
@@ -81,10 +82,28 @@ var balanceCmd = &cobra.Command{
 			logrus.Info(err)
 		}
 
+		var accountsDir string
+		if targetDir == root {
+			accountsDir = path.Join(targetDir, index.AccountsDir)
+		} else if _, err = index.AccountName(targetDir); err == nil {
+			accountsDir = targetDir
+		} else {
+			logrus.Info(err)
+		}
+
+		if accountsDir != "" {
+			accs, err := index.LoadAccounts(ctx, accountsDir)
+			if err == nil {
+				writeAccountBalances(ctx, os.Stdout, accs)
+			} else {
+				logrus.Error(err)
+			}
+		}
+
 		if budgetDir != "" {
 			bdg, err := index.LoadBudget(ctx, budgetDir)
 			if err == nil {
-				writeBalances(ctx, os.Stdout, bdg)
+				writeBudgetBalances(ctx, os.Stdout, bdg)
 			} else {
 				logrus.Error(err)
 			}
@@ -116,7 +135,7 @@ func init() {
 		`How recursively deep the balance tree should be shown before being truncated.`)
 }
 
-func writeBalances(_ context.Context, output io.Writer, budget envelopes.Budget) (err error) {
+func writeBudgetBalances(_ context.Context, output io.Writer, budget envelopes.Budget) (err error) {
 	fmt.Fprintln(output, "Total: ", envelopes.FormatAmount(budget.RecursiveBalance()))
 	fmt.Fprintln(output, "Balance: ", envelopes.FormatAmount(budget.Balance()))
 
@@ -127,5 +146,24 @@ func writeBalances(_ context.Context, output io.Writer, budget envelopes.Budget)
 			fmt.Fprintf(output, "\t%s: %s\n", name, envelopes.FormatAmount(child.RecursiveBalance()))
 		}
 	}
+	return nil
+}
+
+func writeAccountBalances(_ context.Context, output io.Writer, accounts envelopes.Accounts) (err error) {
+	fmt.Fprintln(output, "Accounts:")
+	transformed := accounts.AsMap()
+
+	names := make([]string, 0, len(transformed))
+
+	for name := range transformed {
+		names = append(names, name)
+	}
+
+	sort.Strings(names)
+
+	for _, name := range names {
+		fmt.Fprintf(output, "\t%s: %v\n", name, envelopes.FormatAmount(transformed[name]))
+	}
+
 	return nil
 }
