@@ -24,7 +24,7 @@ phases:
         export PATH=${PATH}:${GOPATH}/bin
         make lint
       env:
-        GOPATH: ~/go
+        GOPATH: /Users/vsts/go
       displayName: 'Run Linters'
 
 - phase: Phase_1
