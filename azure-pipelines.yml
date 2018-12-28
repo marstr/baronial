@@ -1,6 +1,35 @@
 phases:
+- phase: Phase_0
+  displayName: Ensure Formatting, Lint
+
+  condition: succeeded()
+  queue:
+    name: Hosted macOS
+
+  steps:
+    - task: GoTool@0
+      displayName: 'Use Go 1.11'
+      inputs:
+        version: 1.11
+    - script: |
+        set -ev
+        mkdir -p ~/go
+        export GOPATH=~/go
+        export PATH=${PATH}:${GOPATH}/bin
+        echo "${GOPATH}"
+        go get -u golang.org/x/lint/golint
+      displayName: 'Install golint'
+    - script: |
+        set -ev
+        export PATH=${PATH}:${GOPATH}/bin
+        make lint
+      env:
+        GOPATH: /Users/vsts/go
+      displayName: 'Run Linters'
+
 - phase: Phase_1
   displayName: Execute Tests on Linux
+  dependsOn: Phase_0
 
   condition: succeeded()
   queue:
@@ -12,8 +41,8 @@ phases:
     inputs:
       version: 1.11
   - script: |
-      go get -u -insecure github.com/x/lint/golint
-    displayName: 'Install golint'
+      go mod download
+    displayName: 'Download Dependencies'
   - script: |
       set -ev
       make test
@@ -21,6 +50,7 @@ phases:
 
 - phase: Phase_2
   displayName: Execute Tests on Windows
+  dependsOn: Phase_0
 
   condition: succeeded()
   queue:
@@ -31,6 +61,9 @@ phases:
     displayName: 'Use Go 1.11'
     inputs:
       version: 1.11
+  - script: |
+      go mod download
+    displayName: 'Download Dependencies'
   - task: Go@0
     inputs:
       command: test
@@ -39,6 +72,7 @@ phases:
 
 - phase: Phase_3
   displayName: Execute Tests on Mac
+  dependsOn: Phase_0
 
   condition: succeeded()
   queue:
@@ -50,6 +84,9 @@ phases:
     inputs:
       version: 1.11
   - script: |
+      go mod download
+    displayName: 'Download Dependencies'
+  - script: |
       set -ev
-      go test ./...
+      make test
     displayName: 'Execute Tests'
