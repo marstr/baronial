@@ -10,7 +10,7 @@ phases:
     - task: GoTool@0
       displayName: 'Use Go 1.11'
       inputs:
-        version 1.11
+        version: 1.11
     - script: |
         set -ev
         make lint
