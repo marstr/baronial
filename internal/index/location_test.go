@@ -149,6 +149,14 @@ func testBudgetNameExpected(t *testing.T) {
 			"./testdata/test1/budget",
 			"",
 		},
+		{
+			"./testdata/test2/budget/rent",
+			"rent",
+		},
+		{
+			"./testdata/test3/budget/martin/bicycling",
+			"martin/bicycling",
+		},
 	}
 
 	for _, tc := range testCases {

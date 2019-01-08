@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	//defaultTimeout = 30 * time.Second
-	defaultTimeout = 4 * 24 * time.Hour
+	defaultTimeout = 30 * time.Second
+	// defaultTimeout = 4 * 24 * time.Hour
 )
 
 func TestLoadBudget(t *testing.T) {

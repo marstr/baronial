@@ -65,20 +65,20 @@ func (e ErrNotBudget) Error() string {
 // repository.
 func RootDirectory(dirname string) (string, error) {
 	var err error
-	var entry os.FileInfo
+	var dirInfo os.FileInfo
 
 	dirname, err = filepath.Abs(dirname)
 	if err != nil {
 		return "", err
 	}
 
-	entry, err = os.Stat(dirname)
+	dirInfo, err = os.Stat(dirname)
 	if err != nil {
 		return "", err
 	}
 
-	if !entry.IsDir() {
-		dirname = path.Dir(dirname)
+	if !dirInfo.IsDir() {
+		dirname = filepath.Dir(dirname)
 	}
 
 	contents, err := ioutil.ReadDir(dirname)
@@ -92,7 +92,7 @@ func RootDirectory(dirname string) (string, error) {
 		}
 	}
 
-	parent := path.Dir(dirname)
+	parent := filepath.Dir(dirname)
 	if parent == dirname {
 		return "", ErrNoRootDir(dirname)
 	}
@@ -120,6 +120,7 @@ func AccountName(dirname string) (string, error) {
 	}
 
 	accountPrefix := path.Join(root, AccountsDir)
+	accountPrefix = filepath.Clean(accountPrefix)
 	if !strings.HasPrefix(dirname, accountPrefix) {
 		return "", ErrNotAccount(dirname)
 	}
@@ -127,10 +128,11 @@ func AccountName(dirname string) (string, error) {
 	if info, err := os.Stat(dirname); err != nil {
 		return "", err
 	} else if !info.IsDir() {
-		dirname = path.Dir(dirname)
+		dirname = filepath.Dir(dirname)
 	}
-
-	return strings.TrimLeft(strings.TrimPrefix(dirname, accountPrefix), "/"), nil
+	trimmed := strings.TrimLeft(strings.TrimPrefix(dirname, accountPrefix), `/\`)
+	trimmed = strings.Replace(trimmed, `\`, `/`, -1)
+	return trimmed, nil
 }
 
 // BudgetName finds the name of a Budget as it exists in a baronial repository index.
@@ -146,9 +148,15 @@ func BudgetName(dirname string) (string, error) {
 	}
 
 	budgetPrefix := path.Join(root, BudgetDir)
+	budgetPrefix = filepath.Clean(budgetPrefix)
+
 	if !strings.HasPrefix(dirname, budgetPrefix) {
 		return "", ErrNotBudget(dirname)
 	}
 
-	return strings.TrimPrefix(dirname, budgetPrefix), nil
+	cleaned := strings.TrimPrefix(dirname, budgetPrefix)
+	cleaned = strings.TrimLeft(cleaned, `/\`)
+	cleaned = strings.Replace(cleaned, `\`, `/`, -1)
+
+	return cleaned , nil
 }
