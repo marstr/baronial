@@ -158,5 +158,5 @@ func BudgetName(dirname string) (string, error) {
 	cleaned = strings.TrimLeft(cleaned, `/\`)
 	cleaned = strings.Replace(cleaned, `\`, `/`, -1)
 
-	return cleaned , nil
+	return cleaned, nil
 }
