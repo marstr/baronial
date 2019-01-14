@@ -69,6 +69,17 @@ phases:
       command: test
       arguments: ./...
     displayName: 'Execute Tests'
+  - task: PowerShell@2
+    inputs:
+      targetType: 'inline'
+      script:
+        go build
+        cp baronial.exe $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+    displayName: 'Build Executable'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      artifactName: 'windows'
+    displayName: 'Publish Executable'
 
 - phase: Phase_3
   displayName: MacOSX
