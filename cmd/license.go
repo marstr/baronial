@@ -1,4 +1,4 @@
-// Copyright © 2018 Martin Strobel
+// Copyright © 2019 Martin Strobel
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ var licenseCmd = &cobra.Command{
 	Short: "Prints license information about baronial.",
 	Args:  cobra.NoArgs,
 	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("baronial Copyright (C) Martin Strobel 2018")
+		fmt.Println("baronial Copyright (C) Martin Strobel 2019")
 		fmt.Println("Licensed under the GNU General Public License v3")
 		fmt.Println("A full copy of the license may be found here:")
 		fmt.Println("https://www.gnu.org/licenses/gpl-3.0.en.html")
