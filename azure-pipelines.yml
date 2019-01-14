@@ -28,7 +28,7 @@ phases:
       displayName: 'Run Linters'
 
 - phase: Phase_1
-  displayName: Execute Tests on Linux
+  displayName: Linux
   dependsOn: Phase_0
 
   condition: succeeded()
@@ -49,7 +49,7 @@ phases:
     displayName: 'Execute Tests'
 
 - phase: Phase_2
-  displayName: Execute Tests on Windows
+  displayName: Windows
   dependsOn: Phase_0
 
   condition: succeeded()
@@ -71,7 +71,7 @@ phases:
     displayName: 'Execute Tests'
 
 - phase: Phase_3
-  displayName: Execute Tests on Mac
+  displayName: MacOSX
   dependsOn: Phase_0
 
   condition: succeeded()
@@ -90,3 +90,11 @@ phases:
       set -ev
       make test
     displayName: 'Execute Tests'
+  - script: |
+      make darwin
+      cp bin/darwin/baronial $BUILD_ARTIFACTSTAGINGDIRECTORY/
+    displayName: 'Build Executable'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      artifactName: 'darwin'
+    displayName: 'Publish Executable'
