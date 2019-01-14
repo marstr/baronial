@@ -16,10 +16,14 @@
 package cmd
 
 import (
+	"context"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/marstr/baronial/internal/index"
+	"github.com/marstr/envelopes"
+	"github.com/marstr/envelopes/persist"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -30,6 +34,9 @@ var initCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(_ *cobra.Command, args []string) {
 		const initCmdFailurePrefix = "unable to initialize repository: "
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
 		var targetDir string
 		if len(args) > 0 {
@@ -57,6 +64,12 @@ var initCmd = &cobra.Command{
 				logrus.Fatal(initCmdFailurePrefix, err)
 			}
 		}
+
+		persister := persist.FileSystem{
+			Root: index.RepoName,
+		}
+
+		persister.WriteCurrent(ctx, envelopes.Transaction{})
 	},
 }
 
