@@ -64,12 +64,14 @@ var commitCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		accounts, err := index.LoadAccounts(ctx, targetDir)
+		accountsDir := filepath.Join(targetDir, index.AccountsDir)
+		accounts, err := index.LoadAccounts(ctx, accountsDir)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		budget, err := index.LoadBudget(ctx, targetDir)
+		budgetDir := filepath.Join(targetDir, index.BudgetDir)
+		budget, err := index.LoadBudget(ctx, budgetDir)
 		if err != nil {
 			logrus.Fatal(err)
 		}
