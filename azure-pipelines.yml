@@ -47,6 +47,14 @@ phases:
       set -ev
       make test
     displayName: 'Execute Tests'
+  - script: |
+      make linux
+      cp bin/linux/baronial $BUILD_ARTIFACTSTAGINGDIRECTORY/
+    displayName: 'Build Executable'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      artifactName: 'linux'
+    displayName: 'Publish Executable'
 
 - phase: Phase_2
   displayName: Windows
