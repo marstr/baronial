@@ -72,7 +72,7 @@ phases:
   - task: Go@0
     inputs:
       command: build
-      arguments: -o $(Build.ArtifactsDirectory)/baronial.exe -ldflags "-X github.com/marstr/baronial/cmd.revision=$(Build.SourceVersion)"
+      arguments: -o $(Build.ArtifactStagingDirectory)/baronial.exe -ldflags "-X github.com/marstr/baronial/cmd.revision=$(Build.SourceVersion)"
     displayName: 'Build Executable'
   - task: PublishBuildArtifacts@1
     inputs:
