@@ -16,10 +16,9 @@
 package cmd
 
 import (
-	"context"
+	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
@@ -34,9 +33,6 @@ var initCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(_ *cobra.Command, args []string) {
 		const initCmdFailurePrefix = "unable to initialize repository: "
-
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
 
 		var targetDir string
 		if len(args) > 0 {
@@ -69,7 +65,18 @@ var initCmd = &cobra.Command{
 			Root: index.RepoName,
 		}
 
-		persister.WriteCurrent(ctx, envelopes.Transaction{})
+		location, err := persister.CurrentPath()
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		handle, err := os.Create(location)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		fmt.Fprintln(handle, envelopes.ID{})
+		handle.Close()
 	},
 }
 
