@@ -95,25 +95,25 @@ func LoadAccounts(ctx context.Context, dirname string) (envelopes.Accounts, erro
 				}
 
 				trimmed := strings.TrimSpace(string(contents))
-				bal, err = envelopes.ParseAmount(trimmed)
+
+				bal, err = envelopes.ParseBalance(trimmed)
 				if err != nil {
 					return envelopes.Accounts{}, err
 				}
 
-				found, _ = previous.AddAccount(accName, bal)
+				found[accName] = bal
 			}
 		}
 
 		return found, nil
 	}
 
-	return helper(ctx, dirname, envelopes.NewAccounts(nil))
+	return helper(ctx, dirname, make(envelopes.Accounts, 0))
 }
 
 // LoadBudget reads the budget portion of the current baronial index into memory.
-func LoadBudget(ctx context.Context, dirname string) (retval envelopes.Budget, err error) {
+func LoadBudget(ctx context.Context, dirname string) (retval *envelopes.Budget, err error) {
 	var entries []os.FileInfo
-	var children map[string]envelopes.Budget
 
 	select {
 	case <-ctx.Done():
@@ -128,6 +128,8 @@ func LoadBudget(ctx context.Context, dirname string) (retval envelopes.Budget, e
 		return
 	}
 
+	retval = new(envelopes.Budget)
+
 	// Walk directory tree looking for files relevant to determining the balance of budgets.
 	for _, e := range entries {
 		fullEntryName := filepath.Join(dirname, e.Name())
@@ -135,7 +137,7 @@ func LoadBudget(ctx context.Context, dirname string) (retval envelopes.Budget, e
 		if e.IsDir() {
 			// If the entry is a directory, load it as a child budget.
 
-			var child envelopes.Budget
+			var child *envelopes.Budget
 
 			if strings.HasPrefix(e.Name(), ".") {
 				continue
@@ -146,17 +148,16 @@ func LoadBudget(ctx context.Context, dirname string) (retval envelopes.Budget, e
 				return
 			}
 
-			if children == nil {
-				children = make(map[string]envelopes.Budget)
+			if retval.Children == nil {
+				retval.Children = make(map[string]*envelopes.Budget)
 			}
-			children[e.Name()] = child
+			retval.Children[e.Name()] = child
 		} else if e.Name() == cashName {
 			// If the directory entry is a file with the expected name for a file holding information about a cash
 			// balance, parse the amount it contains and set that as the balance of this folder (excluding sub-balances).
 
 			var reader io.Reader
 			var contents []byte
-			var bal envelopes.Balance
 
 			reader, err = os.Open(fullEntryName)
 			if err != nil {
@@ -169,18 +170,11 @@ func LoadBudget(ctx context.Context, dirname string) (retval envelopes.Budget, e
 				return
 			}
 
-			trimmed := strings.TrimSpace(string(contents))
-			bal, err = envelopes.ParseAmount(trimmed)
+			retval.Balance, err = envelopes.ParseBalance(string(contents))
 			if err != nil {
 				return
 			}
-
-			retval = retval.WithBalance(bal)
 		}
-	}
-
-	if children != nil {
-		retval = retval.WithChildren(children)
 	}
 
 	return retval, nil

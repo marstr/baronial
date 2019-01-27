@@ -41,13 +41,13 @@ var debitCmd = &cobra.Command{
 		}
 
 		rawMagnitude := args[1]
-		magnitude, err := envelopes.ParseAmount(rawMagnitude)
+		magnitude, err := envelopes.ParseBalance(rawMagnitude)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		bdg = bdg.DecreaseBalance(magnitude)
-		err = index.WriteBudget(ctx, targetDir, bdg)
+		bdg.Balance -= magnitude
+		err = index.WriteBudget(ctx, targetDir, *bdg)
 		if err != nil {
 			logrus.Fatal(err)
 		}

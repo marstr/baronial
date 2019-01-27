@@ -33,8 +33,6 @@ func WriteBudget(ctx context.Context, targetDir string, budget envelopes.Budget)
 	}
 	defer handle.Close()
 
-	payload := envelopes.FormatAmount(budget.Balance())
-
-	_, err = fmt.Fprintln(handle, payload)
+	_, err = fmt.Fprintln(handle, budget.Balance)
 	return nil
 }

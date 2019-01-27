@@ -40,7 +40,7 @@ func TestLoadBudget(t *testing.T) {
 
 	want := envelopes.Balance(1234)
 
-	if got := result.Balance(); got != want {
+	if got := result.Balance; got != want {
 		t.Logf("Raw Balance:\n\tgot:  %v\n\twant: %v", got, want)
 		t.Fail()
 	}
@@ -76,7 +76,7 @@ func TestLoadAccounts(t *testing.T) {
 			}
 
 			for _, name := range result.Names() {
-				got, _ := result.Balance(name)
+				got, _ := result[name]
 				want, ok := tc.expected[name]
 				if !ok {
 					t.Logf("unexpected budget: %s -> %v", name, got)

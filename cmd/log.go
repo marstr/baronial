@@ -19,17 +19,17 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/marstr/baronial/internal/index"
 )
 
 var logCmd = &cobra.Command{
@@ -46,6 +46,9 @@ var logCmd = &cobra.Command{
 		}
 
 		persister := persist.FileSystem{Root: filepath.Join(root, index.RepoName)}
+		reader := persist.DefaultLoader{
+			Fetcher: persister,
+		}
 
 		currentID, err := persister.Current(ctx)
 		if err != nil {
@@ -53,19 +56,17 @@ var logCmd = &cobra.Command{
 		}
 
 		for !isEmptyID(currentID) {
-			result, err := persister.Fetch(ctx, currentID)
-			if err != nil {
-				logrus.Fatal(err)
-			}
-
 			var current envelopes.Transaction
-			err = json.Unmarshal(result, &current)
+			err = reader.Load(ctx, currentID, &current)
 			if err != nil {
 				logrus.Fatal(err)
 			}
 
-			outputTransaction(ctx, os.Stdout, current)
-			currentID = current.Parent()
+			err = outputTransaction(ctx, os.Stdout, current)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+			currentID = current.Parent
 		}
 	},
 }
@@ -79,12 +80,27 @@ func isEmptyID(subject envelopes.ID) bool {
 	return true
 }
 
-func outputTransaction(_ context.Context, output io.Writer, subject envelopes.Transaction) error {
-	fmt.Fprintln(output, subject.ID())
-	fmt.Fprintf(output, "\tTime:    \t%v\n", subject.Time())
-	fmt.Fprintf(output, "\tAmount:  \t%s\n", envelopes.FormatAmount(subject.Amount()))
-	fmt.Fprintf(output, "\tMerchant:\t%s\n", subject.Merchant())
-	fmt.Fprintf(output, "\tComment: \t%s\n", subject.Comment())
+func outputTransaction(_ context.Context, output io.Writer, subject envelopes.Transaction) (err error) {
+	_, err = fmt.Fprintln(output, subject.ID())
+	if err != nil {
+		return
+	}
+	_, err = fmt.Fprintf(output, "\tTime:    \t%v\n", subject.Time)
+	if err != nil {
+		return
+	}
+	_, err = fmt.Fprintf(output, "\tAmount:  \t%s\n", subject.Amount)
+	if err != nil {
+		return
+	}
+	_, err = fmt.Fprintf(output, "\tMerchant:\t%s\n", subject.Merchant)
+	if err != nil {
+		return
+	}
+	_, err = fmt.Fprintf(output, "\tComment: \t%s\n", subject.Comment)
+	if err != nil {
+		return
+	}
 	return nil
 }
 

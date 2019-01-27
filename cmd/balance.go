@@ -22,14 +22,14 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"time"
 
-	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/marstr/baronial/internal/index"
 )
 
 const (
@@ -94,7 +94,10 @@ var balanceCmd = &cobra.Command{
 		if accountsDir != "" {
 			accs, err := index.LoadAccounts(ctx, accountsDir)
 			if err == nil {
-				writeAccountBalances(ctx, os.Stdout, accs)
+				err = writeAccountBalances(ctx, os.Stdout, accs)
+				if err != nil {
+					logrus.Fatal(err)
+				}
 			} else {
 				logrus.Error(err)
 			}
@@ -103,7 +106,10 @@ var balanceCmd = &cobra.Command{
 		if budgetDir != "" {
 			bdg, err := index.LoadBudget(ctx, budgetDir)
 			if err == nil {
-				writeBudgetBalances(ctx, os.Stdout, bdg)
+				err = writeBudgetBalances(ctx, os.Stdout, *bdg)
+				if err != nil {
+					logrus.Fatal(err)
+				}
 			} else {
 				logrus.Error(err)
 			}
@@ -136,34 +142,42 @@ func init() {
 }
 
 func writeBudgetBalances(_ context.Context, output io.Writer, budget envelopes.Budget) (err error) {
-	fmt.Fprintln(output, "Total: ", envelopes.FormatAmount(budget.RecursiveBalance()))
-	fmt.Fprintln(output, "Balance: ", envelopes.FormatAmount(budget.Balance()))
+	_, err = fmt.Fprintln(output, "Total: ", budget.RecursiveBalance())
+	if err != nil {
+		return
+	}
+	_, err = fmt.Fprintln(output, "Balance: ", budget.Balance)
+	if err != nil {
+		return
+	}
 
-	children := budget.Children()
-	if len(children) > 0 {
-		fmt.Fprintln(output, "Children:")
-		for name, child := range budget.Children() {
-			fmt.Fprintf(output, "\t%s: %s\n", name, envelopes.FormatAmount(child.RecursiveBalance()))
+	if len(budget.Children) > 0 {
+		_, err = fmt.Fprintln(output, "Children:")
+		if err != nil {
+			return
+		}
+		for name, child := range budget.Children {
+			_, err = fmt.Fprintf(output, "\t%s: %s\n", name, child.RecursiveBalance())
+			if err != nil {
+				return
+			}
 		}
 	}
-	return nil
+	return
 }
 
 func writeAccountBalances(_ context.Context, output io.Writer, accounts envelopes.Accounts) (err error) {
-	fmt.Fprintln(output, "Accounts:")
-	transformed := accounts.AsMap()
-
-	names := make([]string, 0, len(transformed))
-
-	for name := range transformed {
-		names = append(names, name)
+	_, err = fmt.Fprintln(output, "Accounts:")
+	if err != nil {
+		return
 	}
 
-	sort.Strings(names)
-
-	for _, name := range names {
-		fmt.Fprintf(output, "\t%s: %v\n", name, envelopes.FormatAmount(transformed[name]))
+	for _, name := range accounts.Names() {
+		_, err = fmt.Fprintf(output, "\t%s: %v\n", name, accounts[name])
+		if err != nil {
+			return
+		}
 	}
 
-	return nil
+	return
 }

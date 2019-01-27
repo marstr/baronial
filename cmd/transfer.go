@@ -37,7 +37,7 @@ var transferCmd = &cobra.Command{
 		rawSrc := args[0]
 		rawDest := args[1]
 		rawMagnitude := args[2]
-		magnitude, err := envelopes.ParseAmount(rawMagnitude)
+		magnitude, err := envelopes.ParseBalance(rawMagnitude)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -52,15 +52,15 @@ var transferCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		src = src.DecreaseBalance(magnitude)
-		dest = dest.IncreaseBalance(magnitude)
+		src.Balance -= magnitude
+		dest.Balance += magnitude
 
-		err = index.WriteBudget(ctx, rawSrc, src)
+		err = index.WriteBudget(ctx, rawSrc, *src)
 		if err != nil {
 			logrus.Error(err)
 		}
 
-		err = index.WriteBudget(ctx, rawDest, dest)
+		err = index.WriteBudget(ctx, rawDest, *dest)
 		if err != nil {
 			logrus.Error(err)
 		}

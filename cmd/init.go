@@ -56,7 +56,9 @@ var initCmd = &cobra.Command{
 		for _, dir := range dirsToCreate {
 			const dirCreationPermissions = 0750
 			err := os.Mkdir(dir, os.FileMode(dirCreationPermissions))
-			if err != nil {
+			if os.IsExist(err) {
+				// Intentionally Left Blank
+			} else if err != nil {
 				logrus.Fatal(initCmdFailurePrefix, err)
 			}
 		}

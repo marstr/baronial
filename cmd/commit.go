@@ -20,12 +20,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/marstr/baronial/internal/index"
 )
 
 const (
@@ -80,42 +81,32 @@ var commitCmd = &cobra.Command{
 			Root: filepath.Join(targetDir, index.RepoName),
 		}
 
+		writer := persist.DefaultWriter{
+			Stasher: persister,
+		}
+
 		parent, err := persister.Current(ctx)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		currentState := envelopes.State{}
-		currentState = currentState.WithAccounts(accounts.ID())
-		currentState = currentState.WithBudget(budget.ID())
+		currentTransaction := envelopes.Transaction{
+			Merchant: commitConfig.GetString(merchantFlag),
+			Comment:  commitConfig.GetString(commentFlag),
+			State: &envelopes.State{
+				Accounts: accounts,
+				Budget:   budget,
+			},
+			Time:   commitConfig.GetTime(timeFlag),
+			Parent: parent,
+		}
 
-		currentTransaction := envelopes.Transaction{}
-		currentTransaction = currentTransaction.WithMerchant(commitConfig.GetString(merchantFlag))
-		currentTransaction = currentTransaction.WithComment(commitConfig.GetString(commentFlag))
-		currentTransaction = currentTransaction.WithState(currentState.ID())
-		currentTransaction = currentTransaction.WithParent(parent)
-
-		err = persister.WriteBudget(ctx, budget)
+		err = writer.Write(ctx, currentTransaction)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		err = persister.WriteAccounts(ctx, accounts)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		err = persister.WriteState(ctx, currentState)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		err = persister.WriteTransaction(ctx, currentTransaction)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		err = persister.WriteCurrent(ctx, currentTransaction)
+		err = persister.WriteCurrent(ctx, &currentTransaction)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -131,5 +122,8 @@ func init() {
 	commitCmd.PersistentFlags().StringP(commentFlag, commentShorthand, commentDefault, commentUsage)
 	commitCmd.PersistentFlags().StringP(timeFlag, timeShorthand, timeDefault, timeUsage)
 
-	commitConfig.BindPFlags(commitCmd.PersistentFlags())
+	err := commitConfig.BindPFlags(commitCmd.PersistentFlags())
+	if err != nil {
+		logrus.Fatal(err)
+	}
 }

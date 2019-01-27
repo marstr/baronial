@@ -49,13 +49,13 @@ var creditCmd = &cobra.Command{
 		}
 
 		rawMagnitude := args[1]
-		magnitude, err := envelopes.ParseAmount(rawMagnitude)
+		magnitude, err := envelopes.ParseBalance(rawMagnitude)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		bdg = bdg.IncreaseBalance(magnitude)
-		err = index.WriteBudget(ctx, rawBudget, bdg)
+		bdg.Balance += magnitude
+		err = index.WriteBudget(ctx, rawBudget, *bdg)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -71,5 +71,8 @@ func init() {
 		creditConfig.GetString(creditAccountFlag),
 		`The account that was credited with more funds.`)
 
-	creditConfig.BindPFlags(creditCmd.Flags())
+	err := creditConfig.BindPFlags(creditCmd.Flags())
+	if err != nil {
+		logrus.Fatal(err)
+	}
 }
