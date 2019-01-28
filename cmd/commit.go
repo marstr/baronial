@@ -17,6 +17,8 @@ package cmd
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -27,6 +29,13 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/marstr/baronial/internal/index"
+)
+
+const (
+	amountFlag      = "amount"
+	amountShorthand = "a"
+	amountDefault   = "USD 0.00"
+	amountUsage     = "The magnitude of the transaction that should be displayed in logs."
 )
 
 const (
@@ -55,10 +64,31 @@ var commitConfig = viper.New()
 var commitCmd = &cobra.Command{
 	Use:   "commit",
 	Short: "Create a transaction with the current impacts in the index.",
-	Args:  cobra.NoArgs,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if commitConfig.IsSet(timeFlag) {
+			if currentValue := commitConfig.GetString(timeFlag); currentValue == timeDefault {
+				commitConfig.SetDefault(timeFlag, time.Now())
+			}
+		}
+
+		if finalTimeValue := commitConfig.GetTime(timeFlag); finalTimeValue.Equal(time.Time{}) {
+			return fmt.Errorf("unable to parse time from %q", commitConfig.GetString(timeFlag))
+		}
+
+		if !commitConfig.IsSet(amountFlag) {
+			return errors.New(`missing flag "` + amountFlag + `"`)
+		}
+
+		return cobra.NoArgs(cmd, args)
+	},
 	Run: func(_ *cobra.Command, _ []string) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
+
+		amount, err := envelopes.ParseBalance(commitConfig.GetString(amountFlag))
+		if err != nil {
+			logrus.Fatal(err)
+		}
 
 		targetDir, err := index.RootDirectory(".")
 		if err != nil {
@@ -91,6 +121,7 @@ var commitCmd = &cobra.Command{
 		}
 
 		currentTransaction := envelopes.Transaction{
+			Amount:   amount,
 			Merchant: commitConfig.GetString(merchantFlag),
 			Comment:  commitConfig.GetString(commentFlag),
 			State: &envelopes.State{
@@ -116,11 +147,10 @@ var commitCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(commitCmd)
 
-	commitConfig.SetDefault(timeFlag, time.Now().String())
-
 	commitCmd.PersistentFlags().StringP(merchantFlag, merchantShorthand, merchantDefault, merchantUsage)
 	commitCmd.PersistentFlags().StringP(commentFlag, commentShorthand, commentDefault, commentUsage)
 	commitCmd.PersistentFlags().StringP(timeFlag, timeShorthand, timeDefault, timeUsage)
+	commitCmd.PersistentFlags().StringP(amountFlag, amountShorthand, amountDefault, amountUsage)
 
 	err := commitConfig.BindPFlags(commitCmd.PersistentFlags())
 	if err != nil {
