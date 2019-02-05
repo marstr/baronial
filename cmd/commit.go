@@ -269,3 +269,135 @@ func promptToContinue(ctx context.Context, message string, output io.Writer, inp
 		return result, nil
 	}
 }
+
+func findAmount(original, updated envelopes.State) envelopes.Balance {
+	if changed := findAccountAmount(original, updated); changed != 0 {
+		return changed
+	}
+
+	return findBudgetAmount(original, updated)
+}
+
+func findAccountAmount(original, updated envelopes.State) envelopes.Balance {
+	modifiedAccounts := make(envelopes.Accounts, len(original.Accounts))
+
+	addedAccountNames := make(map[string]struct{}, len(original.Accounts))
+	for name := range updated.Accounts {
+		addedAccountNames[name] = struct{}{}
+	}
+
+	for name, oldBalance := range original.Accounts {
+		if _, ok := addedAccountNames[name]; ok {
+			// Mark this account as not a new one.
+			delete(addedAccountNames, name)
+		}
+
+		if newBalance, ok := updated.Accounts[name]; ok && newBalance == oldBalance {
+			// Nothing has changed
+			continue
+		} else if !ok {
+			// An account was removed
+			modifiedAccounts[name] = -1 * oldBalance
+		} else {
+			// An account had its balance modified
+			modifiedAccounts[name] = newBalance - oldBalance
+		}
+	}
+
+	// Iterate over the accounts that weren't seen in the original, and mark them as new.
+	for name := range addedAccountNames {
+		modifiedAccounts[name] = updated.Accounts[name]
+	}
+
+	// If there was a transfer between two accounts, we don't want to mark it as amount $0.00, but rather that magnitude
+	// of the transfer. For that reason, we'll figure out the total negative and positive change of the accounts
+	// involved.
+	//
+	// If it was a transfer between budgets, we'll count the total deposited into the receiving accounts.
+	// If it was a deposit or credit, the amount positive or negative will get reflected because the opposite will
+	// register as a zero.
+	var positiveAccountDifferences, negativeAccountDifferences envelopes.Balance
+	for _, bal := range modifiedAccounts {
+		if bal > 0 {
+			positiveAccountDifferences += bal
+		} else {
+			negativeAccountDifferences += bal
+		}
+	}
+
+	if positiveAccountDifferences > 0 {
+		return positiveAccountDifferences
+	}
+
+	if negativeAccountDifferences < 0 {
+		return negativeAccountDifferences
+	}
+
+	return 0
+}
+
+func findBudgetAmount(original, updated envelopes.State) envelopes.Balance {
+	// Normalize the budgets into a flattened shape for easier comparison, more like Accounts
+	const separator = string(os.PathSeparator)
+	originalBudgets := make(map[string]envelopes.Balance)
+	updatedBudgets := make(map[string]envelopes.Balance)
+
+	var treeFlattener func(map[string]envelopes.Balance, string, *envelopes.Budget)
+	treeFlattener = func(discovered map[string]envelopes.Balance, currentPath string, target *envelopes.Budget) {
+		discovered[currentPath] = target.Balance
+
+		for name, subTarget := range target.Children {
+			treeFlattener(discovered, currentPath+separator+name, subTarget)
+		}
+	}
+
+	treeFlattener(originalBudgets, separator, original.Budget)
+	treeFlattener(updatedBudgets, separator, updated.Budget)
+
+	// Make a list of all budget names in the updated state, so that we can find the ones which were added.
+	addedBudgets := make(map[string]struct{}, len(updatedBudgets))
+	for name := range updatedBudgets {
+		addedBudgets[name] = struct{}{}
+	}
+
+	modifiedBudgets := make(map[string]envelopes.Balance, len(originalBudgets))
+
+	for name, oldBalance := range originalBudgets {
+		if _, ok := addedBudgets[name]; ok {
+			// Mark this budget as not a new one.
+			delete(addedBudgets, name)
+		}
+
+		if newBalance, ok := updatedBudgets[name]; ok && newBalance == oldBalance {
+			// Nothing has changed here
+			continue
+		} else if !ok {
+			modifiedBudgets[name] = -1 * oldBalance
+		} else {
+			modifiedBudgets[name] = newBalance - oldBalance
+		}
+	}
+
+	for name := range addedBudgets {
+		modifiedBudgets[name] = updatedBudgets[name]
+	}
+
+	var positiveBudgetDifferences, negativeBudgetDifferences envelopes.Balance
+	for _, bal := range modifiedBudgets {
+		if bal > 0 {
+			positiveBudgetDifferences += bal
+		} else {
+			negativeBudgetDifferences += bal
+		}
+	}
+
+	if positiveBudgetDifferences > 0 {
+		return positiveBudgetDifferences
+	}
+
+	if negativeBudgetDifferences < 0 {
+		return negativeBudgetDifferences
+	}
+
+	return 0
+}
