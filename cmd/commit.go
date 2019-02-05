@@ -187,10 +187,19 @@ var commitCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(commitCmd)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if defaultAmount, err := findDefaultAmount(ctx, "."); err == nil {
+		commitConfig.SetDefault(amountFlag, defaultAmount.String())
+	} else {
+		commitConfig.SetDefault(amountFlag, amountDefault)
+	}
+
 	commitCmd.PersistentFlags().StringP(merchantFlag, merchantShorthand, merchantDefault, merchantUsage)
 	commitCmd.PersistentFlags().StringP(commentFlag, commentShorthand, commentDefault, commentUsage)
 	commitCmd.PersistentFlags().StringP(timeFlag, timeShorthand, timeDefault, timeUsage)
-	commitCmd.PersistentFlags().StringP(amountFlag, amountShorthand, amountDefault, amountUsage)
+	commitCmd.PersistentFlags().StringP(amountFlag, amountShorthand, commitConfig.GetString(amountFlag), amountUsage)
 	commitCmd.PersistentFlags().BoolP(forceFlag, forceShorthand, forceDefault, forceUsage)
 
 	err := commitConfig.BindPFlags(commitCmd.PersistentFlags())
@@ -268,6 +277,55 @@ func promptToContinue(ctx context.Context, message string, output io.Writer, inp
 	case result := <-results:
 		return result, nil
 	}
+}
+
+func findDefaultAmount(ctx context.Context, targetDir string) (envelopes.Balance, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	targetDir, err := index.RootDirectory(targetDir)
+	if err != nil {
+		return 0, err
+	}
+
+	accountsDir := filepath.Join(targetDir, index.AccountsDir)
+	accounts, err := index.LoadAccounts(ctx, accountsDir)
+	if err != nil {
+		return 0, err
+	}
+
+	budgetDir := filepath.Join(targetDir, index.BudgetDir)
+	budget, err := index.LoadBudget(ctx, budgetDir)
+	if err != nil {
+		return 0, err
+	}
+
+	updated := envelopes.State{
+		Accounts: accounts,
+		Budget:   budget,
+	}
+
+	persister := persist.FileSystem{
+		Root: filepath.Join(targetDir, index.RepoName),
+	}
+
+	id, err := persister.Current(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	loader := persist.DefaultLoader{
+		Fetcher: persister,
+	}
+
+	var head envelopes.Transaction
+	err = loader.Load(ctx, id, &head)
+	if err != nil {
+		return 0, err
+	}
+
+	return findAmount(*head.State, updated), nil
+
 }
 
 func findAmount(original, updated envelopes.State) envelopes.Balance {
