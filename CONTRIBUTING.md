@@ -1,6 +1,6 @@
 # Contributing to Baronial
 
-This is a piece of Free Software, and is licensed to you under the [GNU Public License v3](../LICENSE). If this is your
+This is a piece of Free Software, and is licensed to you under the [GNU Public License v3](./LICENSE). If this is your
 first time working on or with Free Software, welcome! While there are more details, Free Software basically means that
 you have the following rights:
 1. You may modify this software to suit your needs. If you do modify it, please indicate that you have done so.
