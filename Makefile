@@ -4,10 +4,11 @@ TEST_SRC = $(shell find . -name '*_test.go' -type f)
 
 # Define the current git revision being packed into each of the build products.
 REVISION = $(shell sh ./get-revision.sh)
+VERSION = $(shell sh ./get-version.sh)
 
 # Define high-level build targets.
 .PHONY: all
-all: darwin linux windows docker
+all: darwin linux windows test lint
 
 .PHONY: linux
 linux: bin/linux/baronial.gz
@@ -23,19 +24,19 @@ docker: bin/docker/baronial-alpine.tar.gz bin/docker/baronial-debian.tar.gz
 
 # Define specific build targets.
 bin/darwin/baronial: ${SRC} .git/HEAD go.sum
-	GOOS=darwin go build -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION}" -o bin/darwin/baronial
+	GOOS=darwin go build -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION} -X github.com/marstr/baronial/cmd.version=${VERSION}" -o bin/darwin/baronial
 
 bin/darwin/baronial.gz: bin/darwin/baronial
 	gzip -kf bin/darwin/baronial
 
 bin/linux/baronial: ${SRC} .git/HEAD go.sum
-	GOOS=linux go build -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION}" -o bin/linux/baronial
+	GOOS=linux go build -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION} -X github.com/marstr/baronial/cmd.version=${VERSION}" -o bin/linux/baronial
 
 bin/linux/baronial.gz: bin/linux/baronial
 	gzip -kf bin/linux/baronial
 
 bin/windows/baronial.exe: ${SRC} .git/HEAD go.sum
-	GOOS=windows go build -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION}" -o bin/windows/baronial.exe
+	GOOS=windows go build -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION} -X github.com/marstr/baronial/cmd.version=${VERSION}" -o bin/windows/baronial.exe
 
 bin/docker/baronial-alpine.tar.gz: ${SRC} Dockerfile.alpine
 	mkdir -p bin/docker
@@ -66,7 +67,7 @@ lint: ${SRC} ${TEST_SRC}
 # Install this build on the local system.
 .PHONY: install
 install: ${SRC}
-	go install -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION}"
+	go install -ldflags "-X github.com/marstr/baronial/cmd.revision=${REVISION} -X github.com/marstr/baronial/cmd.version=${VERSION}"
 
 # Remove all build products from the current system.
 .PHONY: clean
