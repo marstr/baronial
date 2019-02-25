@@ -17,13 +17,15 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/marstr/baronial/internal/index"
 )
 
 const (
@@ -34,30 +36,31 @@ const (
 var creditConfig = viper.New()
 
 var creditCmd = &cobra.Command{
-	Use:     "credit {budget} {amount}",
+	Use:     "credit {amount} {budget | account} [{budget | account}...]",
 	Aliases: []string{"c"},
-	Short:   "Makes funds available for a category of spending.",
-	Args:    cobra.ExactArgs(2),
+	Short:   "Makes funds available for one or more category of spending.",
+	Args:    creditDebitArgValidation,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		rawBudget := args[0]
-		bdg, err := index.LoadBudget(ctx, rawBudget)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		rawMagnitude := args[1]
+		rawMagnitude := args[0]
 		magnitude, err := envelopes.ParseBalance(rawMagnitude)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		bdg.Balance += magnitude
-		err = index.WriteBudget(ctx, rawBudget, *bdg)
-		if err != nil {
-			logrus.Fatal(err)
+		for _, rawBudget := range args[1:] {
+			bdg, err := index.LoadBudget(ctx, rawBudget)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+
+			bdg.Balance += magnitude
+			err = index.WriteBudget(ctx, rawBudget, *bdg)
+			if err != nil {
+				logrus.Fatal(err)
+			}
 		}
 	},
 }
@@ -75,4 +78,33 @@ func init() {
 	if err != nil {
 		logrus.Fatal(err)
 	}
+}
+
+func creditDebitArgValidation(cmd *cobra.Command, args []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if argCount := len(args); argCount < 2 {
+		return fmt.Errorf("too few arguments (%d). %q requires at least a balance and one budget or account", argCount, cmd.Name())
+	}
+
+	if _, err := envelopes.ParseBalance(args[0]); err != nil {
+		return err
+	}
+
+	for _, arg := range args[1:] {
+		_, err := index.LoadBudget(ctx, arg)
+		if err == nil {
+			continue
+		}
+
+		_, err = index.LoadAccounts(ctx, arg)
+		if err == nil {
+			continue
+		}
+
+		return fmt.Errorf("%q was recognized as neither a budget nor an account", arg)
+	}
+
+	return nil
 }
