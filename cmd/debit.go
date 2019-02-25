@@ -19,37 +19,39 @@ import (
 	"context"
 	"time"
 
-	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/marstr/baronial/internal/index"
 )
 
 var debitCmd = &cobra.Command{
-	Use:     `debit {account} {budget} {amount}`,
+	Use:     `debit {amount} {budget | account} [{budget | account}...]`,
 	Aliases: []string{"d"},
 	Short:   `Removes funds from a category of spending.`,
-	Args:    cobra.ExactArgs(2),
+	Args:    creditDebitArgValidation,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		targetDir := args[0]
-		bdg, err := index.LoadBudget(ctx, targetDir)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		rawMagnitude := args[1]
+		rawMagnitude := args[0]
 		magnitude, err := envelopes.ParseBalance(rawMagnitude)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		bdg.Balance -= magnitude
-		err = index.WriteBudget(ctx, targetDir, *bdg)
-		if err != nil {
-			logrus.Fatal(err)
+		for _, targetDir := range args[1:] {
+			bdg, err := index.LoadBudget(ctx, targetDir)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+
+			bdg.Balance -= magnitude
+			err = index.WriteBudget(ctx, targetDir, *bdg)
+			if err != nil {
+				logrus.Fatal(err)
+			}
 		}
 	},
 }
