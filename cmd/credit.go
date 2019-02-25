@@ -89,7 +89,7 @@ func creditDebitArgValidation(cmd *cobra.Command, args []string) error {
 	}
 
 	if _, err := envelopes.ParseBalance(args[0]); err != nil {
-		return err
+		return fmt.Errorf("%q not recognized as an amount", args[0])
 	}
 
 	for _, arg := range args[1:] {
