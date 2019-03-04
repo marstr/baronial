@@ -33,7 +33,9 @@ import (
 )
 
 var logCmd = &cobra.Command{
-	Use: "log",
+	Use:   "log [{account | budget}...]",
+	Short: "Lists an overview of each transaction.",
+	Long:  "",
 	Args: func(cmd *cobra.Command, args []string) error {
 		return nil
 	},
@@ -60,6 +62,12 @@ var logCmd = &cobra.Command{
 			err = reader.Load(ctx, currentID, &current)
 			if err != nil {
 				logrus.Fatal(err)
+			}
+
+			var parent envelopes.Transaction
+			err = reader.Load(ctx, current.Parent, &parent)
+			if !isEmptyID(current.Parent) && err != nil {
+
 			}
 
 			err = outputTransaction(ctx, os.Stdout, current)
