@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"time"
 
 	"github.com/marstr/envelopes"
@@ -45,6 +46,7 @@ for the sake of brevity. This command shows all known details of a transaction.`
 		if err != nil {
 			logrus.Fatal(err)
 		}
+		root = path.Join(root, index.RepoName)
 
 		var targetID envelopes.ID
 		err = targetID.UnmarshalText([]byte(args[0]))
