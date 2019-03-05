@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"sort"
 	"time"
 
 	"github.com/marstr/envelopes"
@@ -103,9 +104,47 @@ func prettyPrintTransaction(
 	fmt.Fprintf(output, "Comment: \t%s\n", subject.Comment)
 	fmt.Fprintf(output, "Impacts:\n")
 
+	fmt.Fprintf(output, "\tAccounts:\n")
 	for acc, delta := range impacts.Accounts {
-		fmt.Fprintf(output, "\t%s: %s\n", acc, delta)
+		fmt.Fprintf(output, "\t\t%s: %s\n", acc, delta)
+	}
+
+	flattened := flattenBudgets(impacts)
+
+	sortedBudgetNames := make([]string, 0, len(flattened))
+	for name := range flattened {
+		sortedBudgetNames = append(sortedBudgetNames, name)
+	}
+	sort.Strings(sortedBudgetNames)
+
+	fmt.Fprintf(output, "\tBudgets:\n")
+	for _, name := range sortedBudgetNames {
+		fmt.Fprintf(output, "\t\t%s: %s\n", name, flattened[name])
 	}
 
 	return nil
+}
+
+func flattenBudgets(diff envelopes.Impact) map[string]envelopes.Balance {
+	retval := make(map[string]envelopes.Balance)
+	var helper func(*envelopes.Budget, string, string)
+	helper = func(current *envelopes.Budget, running, name string) {
+		if current == nil {
+			return
+		}
+
+		fullName := path.Join(running, name)
+
+		if current.Balance != 0 {
+			retval[fullName] = current.Balance
+		}
+
+		for childName, child := range current.Children {
+			helper(child, fullName, childName)
+		}
+	}
+
+	helper(diff.Budget, "", "")
+
+	return retval
 }
