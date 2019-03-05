@@ -111,7 +111,7 @@ func containsEntity(diff envelopes.Impact, entities ...string) bool {
 
 func containsBudget(diff envelopes.Impact, budgetName string) bool {
 	budgetName = strings.Replace(budgetName, "\\", "/", -1)
-	budgetName = strings.TrimSuffix(budgetName, "/")
+	budgetName = strings.Trim(budgetName, "/")
 	splitName := strings.Split(budgetName, "/")
 	if splitName[0] == "budget" {
 		splitName = splitName[1:]
@@ -134,8 +134,11 @@ func containsBudget(diff envelopes.Impact, budgetName string) bool {
 }
 
 func containsAccount(diff envelopes.Impact, accountName string) bool {
-	// TODO
-	return true
+	accountName = strings.Replace(accountName, "\\", "/", -1)
+	accountName = strings.Trim(accountName, "/")
+	accountName = strings.TrimPrefix(accountName, "accounts/")
+	_, ok := diff.Accounts[accountName]
+	return ok
 }
 
 func isEmptyID(subject envelopes.ID) bool {
