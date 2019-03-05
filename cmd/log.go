@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
@@ -58,25 +59,83 @@ var logCmd = &cobra.Command{
 		}
 
 		for !isEmptyID(currentID) {
+			// TODO: refactor so that if parent was already loaded below, current re-uses that pre-loaded instance.
 			var current envelopes.Transaction
 			err = reader.Load(ctx, currentID, &current)
 			if err != nil {
 				logrus.Fatal(err)
 			}
 
-			var parent envelopes.Transaction
-			err = reader.Load(ctx, current.Parent, &parent)
-			if !isEmptyID(current.Parent) && err != nil {
+			var diff envelopes.Impact
 
+			if isEmptyID(current.Parent) {
+				diff = envelopes.Impact(*current.State)
+			} else {
+				var parent envelopes.Transaction
+				err = reader.Load(ctx, current.Parent, &parent)
+				if err != nil {
+					logrus.Fatal(err)
+				}
+
+				diff = current.State.Subtract(*parent.State)
 			}
 
-			err = outputTransaction(ctx, os.Stdout, current)
-			if err != nil {
-				logrus.Fatal(err)
+			if len(args) == 0 || containsEntity(diff, args...) {
+				err = outputTransaction(ctx, os.Stdout, current)
+				if err != nil {
+					logrus.Fatal(err)
+				}
 			}
 			currentID = current.Parent
 		}
 	},
+}
+
+// containsEntity inspects an Impact, to see if any of the entities provided were impacted by a transaction.
+func containsEntity(diff envelopes.Impact, entities ...string) bool {
+	for _, entity := range entities {
+		entity = strings.TrimPrefix(entity, "/")
+		entity = strings.TrimPrefix(entity, "\\")
+
+		if strings.HasPrefix(entity, index.BudgetDir) && containsBudget(diff, entity) {
+			return true
+		}
+
+		if strings.HasPrefix(entity, index.AccountsDir) && containsAccount(diff, entity) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func containsBudget(diff envelopes.Impact, budgetName string) bool {
+	budgetName = strings.Replace(budgetName, "\\", "/", -1)
+	budgetName = strings.TrimSuffix(budgetName, "/")
+	splitName := strings.Split(budgetName, "/")
+	if splitName[0] == "budget" {
+		splitName = splitName[1:]
+	}
+
+	current := diff.Budget
+
+	for _, entry := range splitName {
+		if current == nil || current.Children == nil {
+			return false
+		}
+
+		if child, ok := current.Children[entry]; ok {
+			current = child
+		} else {
+			return false
+		}
+	}
+	return true
+}
+
+func containsAccount(diff envelopes.Impact, accountName string) bool {
+	// TODO
+	return true
 }
 
 func isEmptyID(subject envelopes.ID) bool {
