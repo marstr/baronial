@@ -26,7 +26,7 @@ import (
 )
 
 var transferCmd = &cobra.Command{
-	Use:     "transfer {src} {dest} {amount}",
+	Use:     "transfer {amount} {src} {dest}",
 	Aliases: []string{"t", "tran"},
 	Short:   "Moves funds from one category of spending to another.",
 	Args:    cobra.ExactArgs(3),
@@ -34,9 +34,9 @@ var transferCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		rawSrc := args[0]
-		rawDest := args[1]
-		rawMagnitude := args[2]
+		rawSrc := args[1]
+		rawDest := args[2]
+		rawMagnitude := args[0]
 		magnitude, err := envelopes.ParseBalance(rawMagnitude)
 		if err != nil {
 			logrus.Fatal(err)
