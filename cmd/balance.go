@@ -22,6 +22,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/marstr/envelopes"
@@ -156,7 +157,15 @@ func writeBudgetBalances(_ context.Context, output io.Writer, budget envelopes.B
 		if err != nil {
 			return
 		}
-		for name, child := range budget.Children {
+
+		childNames := make([]string, 0, len(budget.Children))
+		for name := range budget.Children {
+			childNames = append(childNames, name)
+		}
+		sort.Strings(childNames)
+
+		for _, name := range childNames {
+			child := budget.Children[name]
 			_, err = fmt.Fprintf(output, "\t%s: %s\n", name, child.RecursiveBalance())
 			if err != nil {
 				return
