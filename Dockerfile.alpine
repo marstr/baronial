@@ -1,6 +1,6 @@
-ARG BASE_IMAGE=golang:alpine
+ARG alpine_version=3.9
 
-FROM ${BASE_IMAGE} AS builder
+FROM golang:alpine${alpine_version} AS builder
 
 RUN apk add --no-cache --update alpine-sdk gcc make git
 
@@ -13,7 +13,7 @@ RUN make install
 
 CMD /bin/bash
 
-FROM alpine AS execution
+FROM alpine:${alpine_version} AS execution
 
 COPY --from=builder /go/bin/baronial /usr/local/bin
 

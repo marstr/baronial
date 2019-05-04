@@ -2,6 +2,9 @@
 baronial
 *.exe
 bin/
+version.txt
+revision.txt
+baronial*.tar.gz
 
 # System specific filesystem junk
 .DS_Store
