@@ -1,2 +1,6 @@
 bin/
 Dockerfile*
+.dockerignore
+.idea/
+baronial*.tar.gz
+azure-pipelines.yml
