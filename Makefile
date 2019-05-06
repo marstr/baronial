@@ -75,6 +75,7 @@ go.mod: ${SRC}
 .PHONY: test
 test: ${SRC} ${TEST_SRC} .git/HEAD
 	go test ./...
+	bash -c "pushd ./packaging/redhat > /dev/null; ./test-redhatify-version.sh; result=\$$?; echo $${result}; popd > /dev/null; exit \$${result}"
 
 lint: ${SRC} ${TEST_SRC}
 	go vet ./...
@@ -90,4 +91,6 @@ install: ${SRC} version.txt
 clean:
 	rm -rf bin
 	rm -f revision.txt version.txt baronial.tar.gz
-	docker rmi -f marstr/baronial:debian ||	docker rmi -f marstr/baronial:alpine || docker rmi -f marstr/baronial:fedora
+	docker rmi -f marstr/baronial:debian 2>/dev/null || echo 'Skipping Debian Docker Image Delete' > /dev/stderr
+	docker rmi -f marstr/baronial:alpine 2>/dev/null || echo 'Skipping Alpine Docker Image Delete' > /dev/stderr
+	docker rmi -f marstr/baronial:fedora 2>/dev/null || echo 'Skipping Fedora Docker Image Delete' > /dev/stderr
