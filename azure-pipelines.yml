@@ -8,9 +8,9 @@ phases:
 
   steps:
     - task: GoTool@0
-      displayName: 'Use Go 1.11'
+      displayName: 'Use Go 1.12'
       inputs:
-        version: 1.11
+        version: 1.12
     - script: |
         set -ev
         mkdir -p ~/go
@@ -37,9 +37,9 @@ phases:
 
   steps:
   - task: GoTool@0
-    displayName: 'Use Go 1.11'
+    displayName: 'Use Go 1.12'
     inputs:
-      version: 1.11
+      version: 1.12
   - script: |
       go mod download
     displayName: 'Download Dependencies'
@@ -66,9 +66,9 @@ phases:
 
   steps:
   - task: GoTool@0
-    displayName: 'Use Go 1.11'
+    displayName: 'Use Go 1.12'
     inputs:
-      version: 1.11
+      version: 1.12
   - script: |
       go mod download
     displayName: 'Download Dependencies'
@@ -97,9 +97,9 @@ phases:
 
   steps:
   - task: GoTool@0
-    displayName: 'Use Go 1.11'
+    displayName: 'Use Go 1.12'
     inputs:
-      version: 1.11
+      version: 1.12
   - script: |
       go mod download
     displayName: 'Download Dependencies'
