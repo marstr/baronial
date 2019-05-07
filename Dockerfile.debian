@@ -1,6 +1,6 @@
-ARG BASE_IMAGE=golang:stretch
+ARG tag=stretch
 
-FROM ${BASE_IMAGE} AS builder
+FROM golang:${tag} AS builder
 
 WORKDIR /usr/local/src/baronial
 
@@ -10,7 +10,7 @@ RUN make bin/linux/baronial
 
 CMD /bin/bash
 
-FROM ${BASE_IMAGE} AS execution
+FROM debian:${tag} AS execution
 
 COPY --from=builder /usr/local/src/baronial/bin/linux/baronial /usr/local/bin/
 

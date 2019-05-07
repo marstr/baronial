@@ -5,6 +5,7 @@ bin/
 version.txt
 revision.txt
 baronial*.tar.gz
+.semaphores/
 
 # System specific filesystem junk
 .DS_Store

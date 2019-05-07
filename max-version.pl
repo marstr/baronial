@@ -1,4 +1,19 @@
-#! /usr/bin/env perl
+#!/usr/bin/env perl
+
+###############################################################################
+# This script evaluates a list containing strings conforming to a SemVer, and #
+# finds the entry indicating the most-recent release.                         #
+#                                                                             #
+# For example:                                                                #
+#  1.0.0-beta < 1.0.0 < 1.1 < 1.2.1                                           #
+#                                                                             #
+# Input: A list containing entries with semantic versions.                    #
+# Output: A single line of text conforming to semantic versioning.            #
+#                                                                             #
+# Note: this script should not be relied on for discerning the max version    #
+# between versions that differ only by tag. For instance, the behavior        #
+# between 1.0.1-foo and 1.0.1-bar is undefined.                               #
+###############################################################################
 
 use strict;
 use warnings;
