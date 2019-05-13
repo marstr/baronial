@@ -4,8 +4,8 @@
 # This script takes a list of semantic versions and converts each to one that #
 # is an acceptable version name to embed into an RPM file name.               #
 #                                                                             #
-# Pragmatically, the difference is that RPM does not all the character `-` to #
-# be part of a version, whereas SemVer demands that the `-` be used for       #
+# Pragmatically, the difference is that RPM does not allow the character `-`  #
+# to be part of a version, whereas SemVer demands that the `-` be used for    #
 # defining a 'tag', and also allows the hyphen to be used inside of a tag.    #
 # Looking at popular projects, it seems the convention is to replace the `-`  #
 # with a `~`.                                                                 #

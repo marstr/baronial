@@ -102,7 +102,7 @@ go.mod: ${SRC}
 test: .semaphores/test
 .semaphores/test: ${SRC} ${TEST_SRC}
 	go test ./...
-	bash -c "pushd ./packaging/redhat > /dev/null; ./test-redhatify-version.sh; result=\$$?; popd > /dev/null; exit \$${result}"
+	bash ./packaging/redhat/test-redhatify-version.sh
 	mkdir -p .semaphores && touch .semaphores/test
 
 .PHONY: lint

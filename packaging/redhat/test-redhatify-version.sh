@@ -9,7 +9,10 @@
 ###############################################################################
 
 set -e
+
+pushd $(dirname ${BASH_SOURCE[0]}) > /dev/null
 output_location=$(mktemp -t redhat_versions_XXXXXXXXXX.txt)
 cat ./testdata/semvers.txt | perl ./redhatify-version.pl > ${output_location}
 diff ./testdata/redhat-vers.txt ${output_location}
 rm ${output_location}
+popd > /dev/null
