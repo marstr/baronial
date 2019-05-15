@@ -1,6 +1,6 @@
 Name: baronial
 Version: %{rpm_version}
-Release: %{release}
+Release: %{release}%{?dist}
 Summary: Scriptable personal finance tooling
 License: GPLv3
 Source0: ./baronial-%{rpm_version}.tar.gz
