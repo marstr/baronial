@@ -20,6 +20,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -31,6 +32,29 @@ const (
 	cashName    = "cash.txt"
 	cashFileMax = int64(2 * data.Kilobyte)
 )
+
+// LoadState hydrates both accounts and the budget from the repository in the folder presented.
+func LoadState(ctx context.Context, dirname string) (*envelopes.State, error) {
+	var retval envelopes.State
+	var err error
+
+	dirname, err = RootDirectory(dirname)
+	if err != nil {
+		return nil, err
+	}
+
+	retval.Accounts, err = LoadAccounts(ctx, path.Join(dirname, AccountsDir))
+	if err != nil {
+		return nil, err
+	}
+
+	retval.Budget, err = LoadBudget(ctx, path.Join(dirname, BudgetDir))
+	if err != nil {
+		return nil, err
+	}
+
+	return &retval, nil
+}
 
 // LoadAccounts reads accounts balances from the current baronial index into memory.
 func LoadAccounts(ctx context.Context, dirname string) (envelopes.Accounts, error) {
