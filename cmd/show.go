@@ -89,13 +89,18 @@ func prettyPrintTransaction(
 	loader persist.Loader,
 	subject envelopes.Transaction) error {
 
-	var parent envelopes.Transaction
-	err := loader.Load(ctx, subject.Parent, &parent)
-	if err != nil {
-		return err
-	}
+	var impacts envelopes.Impact
 
-	impacts := subject.State.Subtract(*parent.State)
+	if subject.Parent.Equal(envelopes.ID{}) {
+		impacts = envelopes.Impact(*subject.State)
+	} else {
+		var parent envelopes.Transaction
+		err := loader.Load(ctx, subject.Parent, &parent)
+		if err != nil {
+			return err
+		}
+		impacts = subject.State.Subtract(*parent.State)
+	}
 
 	fmt.Fprintf(output, "Time:    \t%s\n", subject.Time)
 	fmt.Fprintf(output, "Merchant:\t%s\n", subject.Merchant)
