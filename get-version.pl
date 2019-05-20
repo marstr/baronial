@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env perl
 
 ###############################################################################
 # This script finds the SemVer that would be most applicable to this code,    #
@@ -18,12 +18,16 @@
 # Git repository as part of this application.                                 #
 ###############################################################################
 
-version=$(./ancestors.sh | ./max-version.pl)
-revision=$(./get-revision.sh)
+use strict;
+use warnings FATAL => 'all';
 
+my $version = `./ancestors.pl | ./max-version.pl`;
+$version =~ s/\s+$//;
+my $revision = `./get-revision.pl`;
+$revision =~ s/\s+$//;
 
-if [[ $(git rev-parse ${version}) != ${revision} ]]; then
-    version="${version}-modified"
-fi
+if(`git rev-parse ${version}` ne $revision){
+    $version = $version . "-modified";
+}
 
-echo ${version}
+print($version);
