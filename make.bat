@@ -4,6 +4,11 @@ perl .\get-revision.pl > revision.txt
 set /p version=<version.txt
 set /p revision=<revision.txt
 
+if "%1" == "install" (
+    go install -ldflags "-X github.com/marstr/baronial/cmd.revision=%revision% -X github.com/marstr/baronial/cmd.version=%version%"
+    exit
+)
+
 go test ./... || exit /b
 
 go build -ldflags "-X github.com/marstr/baronial/cmd.revision=%revision% -X github.com/marstr/baronial/cmd.version=%version%" -o bin\windows\baronial.exe
@@ -18,4 +23,3 @@ set GOOS=linux
 go build -ldflags "-X github.com/marstr/baronial/cmd.revision=%revision% -X github.com/marstr/baronial/cmd.version=%version%" -o bin\linux\baronial
 endlocal
 
-go install -ldflags "-X github.com/marstr/baronial/cmd.revision=%revision% -X github.com/marstr/baronial/cmd.version=%version%"
