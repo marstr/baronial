@@ -21,9 +21,9 @@
 use strict;
 use warnings FATAL => 'all';
 
-my $version = `./ancestors.pl | ./max-version.pl`;
+my $version = `perl ./ancestors.pl | perl ./max-version.pl`;
 $version =~ s/\s+$//;
-my $revision = `./get-revision.pl`;
+my $revision = `perl ./get-revision.pl`;
 $revision =~ s/\s+$//;
 
 if(`git rev-parse ${version}` ne $revision){
