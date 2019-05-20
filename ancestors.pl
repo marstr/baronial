@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env perl
 
 ###############################################################################
 # This script enumerates all tags in the current repository that point to a   #
@@ -8,8 +8,15 @@
 # Output: A list of Git tag names.                                            #
 ###############################################################################
 
-for tag in $(git tag) ; do
-    if git merge-base --is-ancestor ${tag} HEAD; then
-        echo ${tag}
-    fi
-done
+use strict;
+use warnings FATAL => 'all';
+
+open(TAGS, "git tag|");
+
+while(my $tag = <TAGS>){
+    $tag =~ s/\s+$//;
+    system("git merge-base --is-ancestor ${tag} HEAD");
+    if($? == 0){
+        print($tag . "\n");
+    }
+}

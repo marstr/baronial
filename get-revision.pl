@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env perl
 
 ###############################################################################
 # This script finds the unique identifier for the current SCM revision.       #
@@ -12,10 +12,14 @@
 # commit, the suffix "-modified" is added"                                    #
 ###############################################################################
 
-revision="$(git rev-parse HEAD)"
+use strict;
+use warnings;
 
-if ! [[ -z "$(git status --short)" ]]; then
-	revision="${revision}-modified"
-fi
+my $revision = `git rev-parse HEAD`;
+$revision =~ s/\s+$//;
 
-echo "${revision}"
+if(`git status --short` ne ""){
+    $revision = $revision . "-modified";
+}
+
+print($revision);

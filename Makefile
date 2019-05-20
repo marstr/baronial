@@ -22,10 +22,10 @@ docker: bin/docker/baronial-alpine.tar.gz bin/docker/baronial-debian.tar.gz bin/
 rpm: bin/linux/baronial.fc29.src.rpm bin/linux/baronial.fc29.x86_64.rpm bin/linux/baronial.fc30.src.rpm bin/linux/baronial.fc30.x86_64.rpm bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm
 
 version.txt: ${SRC} go.sum
-	sh ./get-version.sh > version.txt
+	perl ./get-version.pl > version.txt
 
 revision.txt: ${SRC} go.sum
-	sh ./get-revision.sh > revision.txt
+	perl ./get-revision.pl > revision.txt
 
 # Define specific build targets.
 bin/darwin/baronial: ${SRC} go.sum version.txt revision.txt
