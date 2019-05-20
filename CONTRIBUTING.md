@@ -18,7 +18,7 @@ Regardless of the operating system you're using, you'll need the following tools
 	- [VS Code by Microsoft](https://code.visualstudio.com)
 	- [GoLand by JetBrains](https://www.jetbrains.com/go/)
 	- [Vim](https://www.vim.org)
-1. Perl 5, for executing platform independent build scripts. 
+1. [Perl 5](https://www.perl.org/get.html), for executing platform independent build scripts.
 1. [golint](https://github.com/golang/lint), for style conformance.
 
 Optionally, you may also want to install:
@@ -44,4 +44,3 @@ go test ./...
 go vet ./...
 golint ./...
 ```
-
