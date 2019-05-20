@@ -23,11 +23,10 @@ make install
 
 _Windows Machines:_
 
-It's still easy to build from source on a Windows machine. However, it will be tremendously helpful if you ever need to
-file a bug if you inject a little information about which version you installed as you build it.
+It's still easy to build from source on a Windows machine.
 
-``` PowerShell
+``` Batch
 git clone https://github.com/marstr/baronial.git
 cd baronial
-go install -ldflags "-X github.com/marstr/baronial/cmd.revision=$(git rev-parse HEAD)"
+make.bat install
 ```
