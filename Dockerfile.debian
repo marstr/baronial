@@ -4,6 +4,10 @@ FROM golang:${tag} AS builder
 
 WORKDIR /usr/local/src/baronial
 
+COPY go.* .
+
+RUN go mod download
+
 COPY . .
 
 RUN make bin/linux/baronial
