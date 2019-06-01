@@ -6,8 +6,11 @@ RUN apk add --no-cache --update alpine-sdk gcc make git perl
 
 WORKDIR /usr/local/src/baronial
 
-COPY . .
+COPY go.* .
+
 RUN go mod download
+
+COPY . .
 
 RUN make install
 

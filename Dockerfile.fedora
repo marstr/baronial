@@ -7,6 +7,10 @@ RUN rpmdev-setuptree
 
 WORKDIR /usr/src/baronial
 
+COPY go.* .
+
+RUN go mod download
+
 ADD . .
 
 ARG release=1
