@@ -115,3 +115,48 @@ jobs:
     inputs:
       artifactName: 'darwin'
     displayName: 'Publish Executable'
+
+- job: FedoraBuild
+  displayName: 'Build Fedora Artifacts'
+  condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI', 'Schedule'))
+
+  pool:
+    name: Hosted Ubuntu 1604
+
+  steps:
+  - script: |
+      make fedora
+  - task: PublishBuildArtifacts@1
+    inputs:
+      artifactName: 'fedora'
+    displayName: 'Publish Fedora Artifacts'
+
+- job: AlpineBuild
+  displayName: 'Build Alpine Artifacts'
+  condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI', 'Schedule'))
+
+  pool:
+    name: Hosted Ubuntu 1604
+
+  steps:
+    - script: |
+        make alpine
+    - task: PublishBuildArtifacts@1
+      inputs:
+        artifactName: 'alpine'
+      displayName: 'Publish Alpine Artifacts'
+
+- job: openSUSEBuild
+  displayName: 'Build openSUSE Artifacts'
+  condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI', 'Schedule'))
+
+  pool:
+    name: Hosted Ubuntu 1604
+
+  steps:
+    - script: |
+        make opensuse
+    - task: PublishBuildArtifacts@1
+      inputs:
+        artifactName: 'openSUSE'
+      displayName: 'Publish openSUSE Artifacts'
