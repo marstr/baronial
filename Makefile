@@ -19,6 +19,15 @@ windows: bin/windows/baronial.exe
 .PHONY: docker
 docker: bin/docker/baronial-alpine.tar.gz bin/docker/baronial-debian.tar.gz bin/docker/baronial-fedora29.tar.gz bin/docker/baronial-fedora30.tar.gz
 
+.PHONY: fedora
+fedora: bin/linux/baronial.fc29.src.rpm bin/linux/baronial.fc29.x86_64.rpm bin/linux/baronial.fc30.src.rpm bin/linux/baronial.fc30.x86_64.rpm bin/docker/baronial-fedora29.tar.gz bin/docker/baronial-fedora30.tar.gz
+
+.PHONY: opensuse
+opensuse: bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/docker/baronial-opensuse_leap151.tar.gz
+
+.PHONY: alpine
+alpine: bin/docker/baronial-alpine.tar.gz
+
 .PHONY: rpm
 rpm: bin/linux/baronial.fc29.src.rpm bin/linux/baronial.fc29.x86_64.rpm bin/linux/baronial.fc30.src.rpm bin/linux/baronial.fc30.x86_64.rpm bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm
 

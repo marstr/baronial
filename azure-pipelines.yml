@@ -1,9 +1,9 @@
-phases:
-- phase: Phase_0
+jobs:
+- job: Lint
   displayName: Ensure Formatting, Lint
 
   condition: succeeded()
-  queue:
+  pool:
     name: Hosted macOS
 
   steps:
@@ -27,12 +27,12 @@ phases:
         GOPATH: /Users/vsts/go
       displayName: 'Run Linters'
 
-- phase: Phase_1
+- job: LinuxTest
   displayName: Linux
-  dependsOn: Phase_0
+  dependsOn: Lint
 
   condition: succeeded()
-  queue:
+  pool:
     name: Hosted Ubuntu 1604
 
   steps:
@@ -56,12 +56,12 @@ phases:
       artifactName: 'linux'
     displayName: 'Publish Executable'
 
-- phase: Phase_2
+- job: WindowsTest
   displayName: Windows
-  dependsOn: Phase_0
+  dependsOn: Lint
 
   condition: succeeded()
-  queue:
+  pool:
       name: Hosted
 
   steps:
@@ -87,12 +87,12 @@ phases:
       artifactName: 'windows'
     displayName: 'Publish Executable'
 
-- phase: Phase_3
+- job: MacOSXTest
   displayName: MacOSX
-  dependsOn: Phase_0
+  dependsOn: Lint
 
   condition: succeeded()
-  queue:
+  pool:
     name: Hosted macOS
 
   steps:
@@ -115,3 +115,48 @@ phases:
     inputs:
       artifactName: 'darwin'
     displayName: 'Publish Executable'
+
+- job: FedoraBuild
+  displayName: 'Build Fedora Artifacts'
+  condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI', 'Schedule'))
+
+  pool:
+    name: Hosted Ubuntu 1604
+
+  steps:
+  - script: |
+      make fedora
+  - task: PublishBuildArtifacts@1
+    inputs:
+      artifactName: 'fedora'
+    displayName: 'Publish Fedora Artifacts'
+
+- job: AlpineBuild
+  displayName: 'Build Alpine Artifacts'
+  condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI', 'Schedule'))
+
+  pool:
+    name: Hosted Ubuntu 1604
+
+  steps:
+    - script: |
+        make alpine
+    - task: PublishBuildArtifacts@1
+      inputs:
+        artifactName: 'alpine'
+      displayName: 'Publish Alpine Artifacts'
+
+- job: openSUSEBuild
+  displayName: 'Build openSUSE Artifacts'
+  condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI', 'Schedule'))
+
+  pool:
+    name: Hosted Ubuntu 1604
+
+  steps:
+    - script: |
+        make opensuse
+    - task: PublishBuildArtifacts@1
+      inputs:
+        artifactName: 'openSUSE'
+      displayName: 'Publish openSUSE Artifacts'
