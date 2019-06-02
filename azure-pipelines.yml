@@ -126,6 +126,7 @@ jobs:
   steps:
   - script: |
       make fedora
+      cp bin/docker/* $BUILD_ARTIFACTSTAGINGDIRECTORY/
   - task: PublishBuildArtifacts@1
     inputs:
       artifactName: 'fedora'
@@ -141,6 +142,7 @@ jobs:
   steps:
     - script: |
         make alpine
+        cp bin/docker/* $BUILD_ARTIFACTSTAGINGDIRECTORY/
     - task: PublishBuildArtifacts@1
       inputs:
         artifactName: 'alpine'
@@ -156,6 +158,7 @@ jobs:
   steps:
     - script: |
         make opensuse
+        cp bin/docker/* $BUILD_ARTIFACTSTAGINGDIRECTORY/
     - task: PublishBuildArtifacts@1
       inputs:
         artifactName: 'openSUSE'

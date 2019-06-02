@@ -4,7 +4,7 @@ FROM golang:${tag} AS builder
 
 WORKDIR /usr/local/src/baronial
 
-COPY go.* .
+COPY go.* ./
 
 RUN go mod download
 

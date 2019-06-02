@@ -7,7 +7,7 @@ RUN rpmdev-setuptree
 
 WORKDIR /usr/src/baronial
 
-COPY go.* .
+COPY go.* ./
 
 RUN go mod download
 
