@@ -27,17 +27,16 @@ import (
 	"github.com/marstr/envelopes/persist"
 )
 
-const (
-	CURRENT_REFSPEC = "HEAD"
-)
-
 type (
+	// RefSpec exposes operations on a string that is attempting to specify a particular Transaction ID.
 	RefSpec string
 	commitRefSpec RefSpec
 	caretRefSpec RefSpec
 	tildeRefSpec RefSpec
 )
 
+// ErrNoRefSpec indicates that a particular value was passed as if it could be interpreted as a RefSpec, but it could
+// not.
 type ErrNoRefSpec string
 
 func (err ErrNoRefSpec) Error() string {
