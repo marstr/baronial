@@ -32,6 +32,7 @@ import (
 
 var branchCmd = &cobra.Command{
 	Use: "branch {name}",
+	Aliases: []string{"br"},
 	Short: "Creates a branch with a given name.",
 	Args: cobra.MaximumNArgs(1),
 	Run: func(_ *cobra.Command, args []string) {
