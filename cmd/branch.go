@@ -53,7 +53,7 @@ var branchCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		if len(args) > 1 {
+		if len(args) > 0 {
 			err = createBranch(ctx, head, repoDir, args[0])
 			if err != nil {
 				logrus.Fatal(err)
