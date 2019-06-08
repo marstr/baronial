@@ -13,7 +13,7 @@ assignees: ''
 </pre>
 </details>
 
-## What did do?
+## What did you do?
 
 [Describe what needs to happen to reproduce this issue.]
 
