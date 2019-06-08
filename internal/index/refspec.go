@@ -18,6 +18,7 @@ package index
 import (
 	"context"
 	"fmt"
+	"os"
 	"path"
 	"regexp"
 	"strconv"
@@ -33,6 +34,7 @@ type (
 	commitRefSpec RefSpec
 	caretRefSpec RefSpec
 	tildeRefSpec RefSpec
+	branchRefSpec RefSpec
 )
 
 // ErrNoRefSpec indicates that a particular value was passed as if it could be interpreted as a RefSpec, but it could
@@ -71,6 +73,10 @@ func (rs RefSpec) transactionMux(ctx context.Context, repoRoot string) (envelope
 	}
 
 	if result, err := tildeRefSpec(rs).Transaction(ctx, repoRoot); err == nil {
+		return result, nil
+	}
+
+	if result, err := branchRefSpec(rs).Transaction(ctx, repoRoot); err == nil {
 		return result, nil
 	}
 
@@ -142,4 +148,30 @@ func (trs tildeRefSpec) Transaction(ctx context.Context, repoRoot string) (envel
 		return envelopes.ID{}, err
 	}
 	return loaded.ID(), nil
+}
+
+func (brs branchRefSpec) Transaction(ctx context.Context, repoRoot string) (retval envelopes.ID, err error) {
+	branchLoc := path.Join(repoRoot, "refs", "heads", string(brs))
+	handle, err := os.Open(branchLoc)
+	if err != nil {
+		return
+	}
+	var contents [2 * cap(retval)]byte
+	var n int
+	n, err = handle.Read(contents[:])
+	if err != nil {
+		return
+	}
+
+	if n != cap(contents) {
+		err = fmt.Errorf(
+			"%s was not long enough to be a candidate for pointing to a Transaction ID (want: %v got: %v)",
+			branchLoc,
+			cap(contents),
+			n)
+		return
+	}
+
+	err = retval.UnmarshalText(contents[:])
+	return
 }
