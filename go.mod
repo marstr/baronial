@@ -3,6 +3,7 @@ module github.com/marstr/baronial
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/marstr/collection v1.0.1
 	github.com/marstr/envelopes v0.0.0-20190606052203-1d008e17bf36
 	github.com/marstr/units v1.0.1
 	github.com/mitchellh/go-homedir v1.0.0

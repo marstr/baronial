@@ -16,6 +16,8 @@ github.com/konsorten/go-windows-terminal-sequences v1.0.1 h1:mweAR1A6xJ3oS2pRaGi
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/magiconair/properties v1.8.0 h1:LLgXmsheXeRoUOBOjtwPQCWIYqM/LU1ayDtDePerRcY=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
+github.com/marstr/collection v1.0.1 h1:j61osRfyny7zxBlLRtoCvOZ2VX7HEyybkZcsLNLJ0z0=
+github.com/marstr/collection v1.0.1/go.mod h1:HHDXVxjLO3UYCBXJWY+J/ZrxCUOYqrO66ob1AzIsmYA=
 github.com/marstr/envelopes v0.0.0-20190606052203-1d008e17bf36 h1:2Jba3ROseiwRgRd1GKfB4KTGl5YyiaCYvVz+sY3kuoY=
 github.com/marstr/envelopes v0.0.0-20190606052203-1d008e17bf36/go.mod h1:JsI9x2X8hPSrx/0K8/r7F4ma3nNOdZZRLjhxrOKbrr8=
 github.com/marstr/units v1.0.1 h1:J1oBku8rInztZY9IO0W2fS1bZ60UotlmBLbyvyZLoSU=
