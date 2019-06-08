@@ -35,8 +35,8 @@ func BranchLocation(repoRoot, name string) string {
 }
 
 // ReadBranch fetches the contents of a file holding a Transaction ID.
-func ReadBranch(repoRoot, name string) (retval envelopes.ID, err error) {
-	branchLoc := BranchLocation(repoRoot, name)
+func ReadBranch(repoRoot string, name RefSpec) (retval envelopes.ID, err error) {
+	branchLoc := BranchLocation(repoRoot, string(name))
 	handle, err := os.Open(branchLoc)
 	if err != nil {
 		return
@@ -73,7 +73,7 @@ func WriteBranch(repoRoot, name string, transaction envelopes.ID) error {
 	return err
 }
 
-// ReadCurrent fetches the content of the file pointing at the current HEAD.
+// ReadCurrent fetches the contents of the file pointing at the current HEAD.
 func ReadCurrent(repoRoot string) (retval RefSpec, err error) {
 	fileLoc := path.Join(repoRoot, "current.txt")
 
@@ -83,6 +83,19 @@ func ReadCurrent(repoRoot string) (retval RefSpec, err error) {
 	}
 
 	return RefSpec(strings.TrimSpace(string(contents))), nil
+}
+
+// WriteCurrent populates the contents of the file pointing at the current HEAD.
+func WriteCurrent(repoRoot string, ref RefSpec) error {
+	fileLoc := path.Join(repoRoot, "current.txt")
+
+	handle, err := os.Create(fileLoc)
+	if err != nil {
+		return err
+	}
+
+	_, err = handle.WriteString(string(ref))
+	return err
 }
 
 // ListBranches enumerates all of the branches named in a particular repository.

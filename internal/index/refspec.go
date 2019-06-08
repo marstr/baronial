@@ -150,5 +150,5 @@ func (trs tildeRefSpec) Transaction(ctx context.Context, repoRoot string) (envel
 }
 
 func (brs branchRefSpec) Transaction(_ context.Context, repoRoot string) (retval envelopes.ID, err error) {
-	return ReadBranch(repoRoot, string(brs))
+	return ReadBranch(repoRoot, RefSpec(brs))
 }

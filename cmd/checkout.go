@@ -32,6 +32,7 @@ var checkoutCmd = &cobra.Command{
 	Use: "checkout {transaction id}",
 	Aliases: []string{"ch"},
 	Short: "Resets the index to show the balances at a particular transaction.",
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
 		defer cancel()
@@ -42,10 +43,18 @@ var checkoutCmd = &cobra.Command{
 		}
 		root = path.Join(root, index.RepoName)
 
+		requested := index.RefSpec(args[0])
+
 		var targetID envelopes.ID
-		err = targetID.UnmarshalText([]byte(args[0]))
-		if err != nil {
-			logrus.Fatal(err)
+
+		if transactionID, err := index.ReadBranch(root, requested); err == nil {
+			targetID = transactionID
+		} else {
+			logrus.Warn("checking out a RefSpec that isn't a branch can cause data loss")
+			targetID, err = requested.Transaction(ctx, root)
+			if err != nil {
+				logrus.Fatal(err)
+			}
 		}
 
 		persister := persist.FileSystem{
@@ -63,6 +72,11 @@ var checkoutCmd = &cobra.Command{
 		}
 
 		err = index.CheckoutTransaction(ctx, &target, root, 0777)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		err = index.WriteCurrent(root, requested)
 		if err != nil {
 			logrus.Fatal(err)
 		}
