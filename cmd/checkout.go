@@ -29,7 +29,7 @@ import (
 )
 
 var checkoutCmd = &cobra.Command{
-	Use: "checkout {transaction id}",
+	Use: "checkout {refspec}",
 	Aliases: []string{"ch"},
 	Short: "Resets the index to show the balances at a particular transaction.",
 	Args: cobra.ExactArgs(1),
