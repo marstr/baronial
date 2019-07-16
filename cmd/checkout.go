@@ -43,26 +43,32 @@ var checkoutCmd = &cobra.Command{
 		}
 		root = path.Join(root, index.RepoName)
 
-		requested := index.RefSpec(args[0])
+		requested := persist.RefSpec(args[0])
+
+		fs := persist.FileSystem{
+			Root: root,
+		}
 
 		var targetID envelopes.ID
 
-		if transactionID, err := index.ReadBranch(root, requested); err == nil {
+		if transactionID, err := fs.ReadBranch(ctx, (string)(requested)); err == nil {
 			targetID = transactionID
 		} else {
 			logrus.Warn("checking out a RefSpec that isn't a branch can cause data loss")
-			targetID, err = requested.Transaction(ctx, root)
+			resolver := persist.RefSpecResolver{
+				Loader:   persist.DefaultLoader{Fetcher: fs},
+				Brancher: fs,
+				Fetcher:  fs,
+			}
+
+			targetID, err = resolver.Resolve(ctx, requested)
 			if err != nil {
 				logrus.Fatal(err)
 			}
 		}
 
-		persister := persist.FileSystem{
-			Root: root,
-		}
-
 		loader := persist.DefaultLoader{
-			Fetcher: persister,
+			Fetcher: fs,
 		}
 
 		var target envelopes.Transaction
@@ -76,7 +82,7 @@ var checkoutCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		err = index.WriteCurrent(root, requested)
+		err = fs.WriteCurrent(ctx, &target)
 		if err != nil {
 			logrus.Fatal(err)
 		}

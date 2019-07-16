@@ -18,8 +18,10 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"path"
 	"time"
 
+	"github.com/marstr/envelopes/persist"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -34,7 +36,19 @@ var revParseCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 		defer cancel()
 
-		id, err := index.RefSpec(args[0]).Transaction(ctx, ".")
+		root, err := index.RootDirectory(".")
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		fs := &persist.FileSystem{Root: path.Join(root, index.RepoName)}
+		resolver := persist.RefSpecResolver{
+			Fetcher: fs,
+			Loader: persist.DefaultLoader{Fetcher: fs},
+			Brancher: fs,
+		}
+
+		id, err := resolver.Resolve(ctx, persist.RefSpec(args[0]))
 		if err != nil {
 			logrus.Fatal(err)
 		}

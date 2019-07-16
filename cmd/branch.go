@@ -20,10 +20,13 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/marstr/envelopes"
 	"io"
 	"os"
 	"path"
+	"time"
 
+	"github.com/marstr/envelopes/persist"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -36,10 +39,8 @@ var branchCmd = &cobra.Command{
 	Short: "Creates a branch with a given name.",
 	Args: cobra.MaximumNArgs(1),
 	Run: func(_ *cobra.Command, args []string) {
-		// ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
-		// defer cancel()
-
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+		defer cancel()
 
 		indexRootDir, err  := index.RootDirectory(".")
 		if err != nil {
@@ -47,19 +48,34 @@ var branchCmd = &cobra.Command{
 		}
 
 		repoDir := path.Join(indexRootDir, index.RepoName)
+		fs := &persist.FileSystem{Root: repoDir}
 
-		head, err := index.ReadCurrent(repoDir)
+		head, err := fs.CurrentRef(ctx)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
 		if len(args) > 0 {
-			err = createBranch(ctx, head, repoDir, args[0])
+			branchName := args[0]
+
+			resolver := persist.RefSpecResolver{
+				Loader:   persist.DefaultLoader{Fetcher: fs},
+				Brancher: fs,
+				Fetcher:  fs,
+			}
+
+			var target envelopes.ID
+			target, err = resolver.Resolve(ctx, head)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+
+			err = fs.WriteBranch(ctx, branchName, target)
 			if err != nil {
 				logrus.Fatal(err)
 			}
 		} else {
-			err = printBranchList(ctx, os.Stdout, head, repoDir)
+			err = printBranchList(ctx, os.Stdout, fs, head)
 			if err != nil {
 				logrus.Fatal(err)
 			}
@@ -67,30 +83,26 @@ var branchCmd = &cobra.Command{
 	},
 }
 
-func createBranch(ctx context.Context, head index.RefSpec, repoDir, name string) error {
-	transaction, err := head.Transaction(ctx, repoDir)
+func printBranchList(ctx context.Context, output io.Writer, lister persist.BranchLister, head persist.RefSpec) error {
+	branches, err := lister.ListBranches(ctx)
 	if err != nil {
 		return err
 	}
 
-	return index.WriteBranch(repoDir, name, transaction)
-}
-
-func printBranchList(ctx context.Context, output io.Writer, head index.RefSpec, repoDir string) (err error) {
-	for branch := range index.ListBranches(ctx, repoDir) {
+	for branch := range branches {
 		_, err = fmt.Fprint(output, string(branch))
 		if err != nil {
-			return
+			return err
 		}
-		if branch == head {
-			fmt.Fprint(output, " *")
+		if branch == (string)(head) {
+			_, err = fmt.Fprint(output, " *")
 			if err != nil {
-				return
+				return err
 			}
 		}
 		_, err = fmt.Fprintln(output)
 		if err != nil {
-			return
+			return err
 		}
 	}
 	return nil
