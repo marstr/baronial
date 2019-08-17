@@ -130,9 +130,7 @@ test: .semaphores/test
 	mkdir -p .semaphores && touch .semaphores/test
 
 report.xml:
-	echo "GOPATH: ${GOPATH}"
-	echo "PATH: ${PATH}"
-	go test -v ./... 2>&1 | go-junit-report > report.xml
+	go test -v ./... 2>&1 | tee /dev/stderr | go-junit-report > report.xml
 
 .PHONY: lint
 lint: .semaphores/lint
