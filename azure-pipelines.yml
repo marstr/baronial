@@ -55,6 +55,7 @@ jobs:
       export PATH=${PATH}:${GOPATH}/bin
       echo "${GOPATH}"
       go get -u github.com/jstemmer/go-junit-report
+      which go-junit-report
     displayName: "Install Pipeline Dependencies"
   - script: |
       go mod download
