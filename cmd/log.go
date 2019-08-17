@@ -94,6 +94,7 @@ var logCmd = &cobra.Command{
 // containsEntity inspects an Impact, to see if any of the entities provided were impacted by a transaction.
 func containsEntity(diff envelopes.Impact, entities ...string) bool {
 	for _, entity := range entities {
+		entity = strings.TrimLeft(entity, ".")
 		entity = strings.TrimPrefix(entity, "/")
 		entity = strings.TrimPrefix(entity, "\\")
 
