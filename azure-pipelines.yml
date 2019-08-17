@@ -56,7 +56,10 @@ jobs:
       go mod download
     displayName: 'Download Go Dependencies'
   - script: |
+      echo "PATH: ${PATH}"
+      echo "GOPATH: ${GOPATH}"
       set -ev
+      which go-junit-report
       make report.xml
     displayName: 'Execute Tests'
   - task: PublishTestResults@2
