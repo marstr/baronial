@@ -129,6 +129,9 @@ test: .semaphores/test
 	bash ./packaging/redhat/test-redhatify-version.sh
 	mkdir -p .semaphores && touch .semaphores/test
 
+report.xml:
+    go test -v ./... 2>&1 | go-junit-report > report.xml
+
 .PHONY: lint
 lint: .semaphores/lint
 .semaphores/lint: ${SRC} ${TEST_SRC}

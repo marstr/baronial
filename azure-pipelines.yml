@@ -49,12 +49,18 @@ jobs:
     inputs:
       version: 1.12
   - script: |
+      go get -u github.com/jstemmer/go-junit-report
+  - script: |
       go mod download
     displayName: 'Download Dependencies'
   - script: |
       set -ev
-      make test
+      make report.xml
     displayName: 'Execute Tests'
+  - task: PublishTestResults@2
+    inputs:
+      testRunner: JUnit
+      testResultsFiles: $(System.DefaultWorkingDirectory)/**/report.xml
   - script: |
       make linux
       cp bin/linux/baronial $BUILD_ARTIFACTSTAGINGDIRECTORY/
