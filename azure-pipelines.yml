@@ -64,6 +64,8 @@ jobs:
     inputs:
       testRunner: JUnit
       testResultsFiles: $(System.DefaultWorkingDirectory)/**/report.xml
+      buildPlatform: Linux
+      failTaskOnFailedTests: true
   - script: |
       make linux
       cp bin/linux/baronial $BUILD_ARTIFACTSTAGINGDIRECTORY/
