@@ -49,6 +49,7 @@ jobs:
     inputs:
       version: 1.12
   - script: |
+      set -ev
       go get -u github.com/jstemmer/go-junit-report
       export PATH=${PATH}:~/go/bin
     displayName: "Install Pipeline Dependencies"
