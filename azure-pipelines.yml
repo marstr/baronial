@@ -50,7 +50,7 @@ jobs:
       version: 1.12
   - script: |
       go get -u github.com/jstemmer/go-junit-report
-      PATH="${PATH}:${GOPATH}/bin"
+      export PATH=${PATH}:~/go/bin
     displayName: "Install Pipeline Dependencies"
   - script: |
       go mod download
