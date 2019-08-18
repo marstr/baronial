@@ -95,6 +95,7 @@ func LoadAccounts(ctx context.Context, dirname string) (envelopes.Accounts, erro
 				// If we've found a cash balance file in the accounts directory of a baronial repository, we've found an
 				// account.
 				var reader io.Reader
+				var handle *os.File
 				var contents []byte
 				var bal envelopes.Balance
 
@@ -107,13 +108,14 @@ func LoadAccounts(ctx context.Context, dirname string) (envelopes.Accounts, erro
 				}
 
 				// Read the contents of the account
-				reader, err = os.Open(fullEntryName)
+				handle, err = os.Open(fullEntryName)
 				if err != nil {
 					return envelopes.Accounts{}, err
 				}
-				reader = io.LimitReader(reader, cashFileMax)
+				reader = io.LimitReader(handle, cashFileMax)
 
 				contents, err = ioutil.ReadAll(reader)
+				handle.Close()
 				if err != nil {
 					return envelopes.Accounts{}, err
 				}
@@ -182,14 +184,18 @@ func LoadBudget(ctx context.Context, dirname string) (retval *envelopes.Budget, 
 
 			var reader io.Reader
 			var contents []byte
+			var handle *os.File
 
-			reader, err = os.Open(fullEntryName)
+			handle, err = os.Open(fullEntryName)
 			if err != nil {
 				return
 			}
+			reader = handle
+
 			reader = io.LimitReader(reader, cashFileMax)
 
 			contents, err = ioutil.ReadAll(reader)
+			handle.Close()
 			if err != nil {
 				return
 			}
