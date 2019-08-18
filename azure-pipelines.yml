@@ -1,3 +1,11 @@
+trigger:
+  branches:
+    include:
+      - 'master'
+  tags:
+    include:
+      - '*'
+
 jobs:
 - job: Lint
   displayName: Ensure Formatting, Lint
@@ -42,11 +50,22 @@ jobs:
       version: 1.12
   - script: |
       go mod download
-    displayName: 'Download Dependencies'
+    displayName: 'Download Go Dependencies'
   - script: |
+      mkdir -p ~/go
+      export GOPATH=~/go
+      export PATH=${PATH}:${GOPATH}/bin
+      echo "${GOPATH}"
+      go get -u github.com/jstemmer/go-junit-report
       set -ev
-      make test
+      make report.xml
     displayName: 'Execute Tests'
+  - task: PublishTestResults@2
+    inputs:
+      testRunner: JUnit
+      testResultsFiles: $(System.DefaultWorkingDirectory)/**/report.xml
+      buildPlatform: Linux
+      failTaskOnFailedTests: true
   - script: |
       make linux
       cp bin/linux/baronial $BUILD_ARTIFACTSTAGINGDIRECTORY/
