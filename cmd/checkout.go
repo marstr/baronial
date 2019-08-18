@@ -82,7 +82,7 @@ var checkoutCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		err = fs.WriteCurrent(ctx, &target)
+		err = fs.SetCurrent(ctx, requested)
 		if err != nil {
 			logrus.Fatal(err)
 		}
