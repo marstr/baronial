@@ -24,6 +24,8 @@ github.com/marstr/envelopes v0.0.0-20190818055740-687d6b7ef3dd h1:F3spkU/nEO2eXB
 github.com/marstr/envelopes v0.0.0-20190818055740-687d6b7ef3dd/go.mod h1:E+AJbWeG4QmcZnSQW2aII/Gw9XIumNhshpii+jHBkms=
 github.com/marstr/envelopes v0.0.0-20190818071432-1b58707a912e h1:tv0ydp5zhHOjNSN5cKGKrycTl2sbOIcC/d8XtWfE2BM=
 github.com/marstr/envelopes v0.0.0-20190818071432-1b58707a912e/go.mod h1:E+AJbWeG4QmcZnSQW2aII/Gw9XIumNhshpii+jHBkms=
+github.com/marstr/envelopes v0.0.0-20190915204657-a43878a91415 h1:Y/C0J0uCkYj71+o5ycKIDHPdPXJxpxitxDi+FleMNZE=
+github.com/marstr/envelopes v0.0.0-20190915204657-a43878a91415/go.mod h1:E+AJbWeG4QmcZnSQW2aII/Gw9XIumNhshpii+jHBkms=
 github.com/marstr/units v1.0.1 h1:J1oBku8rInztZY9IO0W2fS1bZ60UotlmBLbyvyZLoSU=
 github.com/marstr/units v1.0.1/go.mod h1:B1/IxDKETT7FwLuU0ZOvdPePP9chjt0PLTt+qeVARJ8=
 github.com/mitchellh/go-homedir v0.0.0-20161203194507-b8bc1bf76747/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
