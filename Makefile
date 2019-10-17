@@ -20,7 +20,7 @@ windows: bin/windows/baronial.exe
 docker: bin/docker/baronial-alpine.tar.gz bin/docker/baronial-debian.tar.gz bin/docker/baronial-fedora29.tar.gz bin/docker/baronial-fedora30.tar.gz
 
 .PHONY: fedora
-fedora: bin/linux/baronial.fc29.src.rpm bin/linux/baronial.fc29.x86_64.rpm bin/linux/baronial.fc30.src.rpm bin/linux/baronial.fc30.x86_64.rpm bin/docker/baronial-fedora29.tar.gz bin/docker/baronial-fedora30.tar.gz
+fedora: bin/linux/baronial.fc29.src.rpm bin/linux/baronial.fc29.x86_64.rpm bin/docker/baronial-fedora29.tar.gz bin/linux/baronial.fc30.src.rpm bin/linux/baronial.fc30.x86_64.rpm bin/docker/baronial-fedora30.tar.gz bin/linux/baronial.fc31.src.rpm bin/linux/baronial.fc31.x86_64.rpm bin/docker/baronial-fedora31.tar.gz
 
 .PHONY: opensuse
 opensuse: bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/docker/baronial-opensuse_leap151.tar.gz
@@ -97,6 +97,20 @@ bin/linux/baronial.fc30.x86_64.rpm: bin/docker/baronial-fedora30.tar.gz version.
 	mkdir -p bin/linux
 	${DOCKER} run --rm marstr/baronial:fedora30-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc30.x86_64.rpm > bin/linux/baronial.fc30.x86_64.rpm
 
+bin/docker/baronial-fedora31.tar.gz: ${SRC} Dockerfile.fedora
+	mkdir -p bin/docker
+	${DOCKER} build --build-arg tag=31 -t marstr/baronial:fedora30-rpm-builder -f Dockerfile.fedora --target rpm-builder .
+	${DOCKER} build --build-arg tag=31 -t marstr/baronial:fedora30 -f Dockerfile.fedora .
+	${DOCKER} save marstr/baronial:fedora31 | gzip > bin/docker/baronial-fedora31.tar.gz
+
+bin/linux/baronial.fc31.src.rpm: bin/docker/baronial-fedora31.tar.gz version.txt
+	mkdir -p bin/linux
+	${DOCKER} run --rm marstr/baronial:fedora31-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc31.src.rpm > bin/linux/baronial.fc31.src.rpm
+
+bin/linux/baronial.fc31.x86_64.rpm: bin/docker/baronial-fedora31.tar.gz version.txt
+	mkdir -p bin/linux
+	${DOCKER} run --rm marstr/baronial:fedora31-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc31.x86_64.rpm > bin/linux/baronial.fc31.x86_64.rpm
+
 bin/docker/baronial-opensuse_leap151.tar.gz: ${SRC} Dockerfile.opensuse_leap
 	mkdir -p bin/docker
 	${DOCKER} build --build-arg tag=15.1 -t marstr/baronial:leap151-rpm-builder -f Dockerfile.opensuse_leap --target rpm-builder .
@@ -156,5 +170,7 @@ clean:
 	${DOCKER} rmi -f marstr/baronial:fedora29 2>/dev/null || echo 'Skipping Fedora 29 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:fedora30-rpm-builder 2>/dev/null || echo 'Skipiing Fedora 30 RPM Builder Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:fedora30 2>/dev/null || echo 'Skipping Fedora 30 Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora31-rpm-builder 2>/dev/null || echo 'Skiping Fedora 31 RPM Builder Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora31 2>/dev/null || echo 'Skipping Fedora 31 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:leap151-rpm-builder 2>/dev/null || echo 'Skiping openSUSE Leap 15.1 RPM Builder Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:leap151 2>/dev/null || echo 'Skipping openSUSE Leap 15.1 Docker Image Delete' > /dev/stderr
