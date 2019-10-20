@@ -22,14 +22,12 @@ import (
 	"os"
 	"path"
 	"sort"
-	"time"
 
+	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	"github.com/marstr/baronial/internal/index"
 )
 
 var showCmd = &cobra.Command{
@@ -40,7 +38,7 @@ displayed. However, the particular impacts to accounts and budgets are hidden
 for the sake of brevity. This command shows all known details of a transaction.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
 		root, err := index.RootDirectory(".")
@@ -49,18 +47,25 @@ for the sake of brevity. This command shows all known details of a transaction.`
 		}
 		root = path.Join(root, index.RepoName)
 
-		var targetID envelopes.ID
-		err = targetID.UnmarshalText([]byte(args[0]))
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
 		persister := persist.FileSystem{
 			Root: root,
 		}
 
 		loader := persist.DefaultLoader{
 			Fetcher: persister,
+		}
+
+		resolver := persist.RefSpecResolver{
+			Loader: loader,
+			Brancher: persister,
+			Fetcher: persister,
+		}
+
+		var targetID envelopes.ID
+
+		targetID, err = resolver.Resolve(ctx, persist.RefSpec(args[0]))
+		if err != nil {
+			logrus.Fatal(err)
 		}
 
 		var target envelopes.Transaction
