@@ -29,7 +29,10 @@ jobs:
       displayName: 'Install golint'
     - script: |
         set -ev
+        mkdir -p ~/go
+        export GOPATH=~/go
         export PATH=${PATH}:${GOPATH}/bin
+        echo "${GOPATH}"
         make lint
       env:
         GOPATH: /Users/vsts/go
