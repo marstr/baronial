@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -81,7 +80,7 @@ var logCmd = &cobra.Command{
 			}
 
 			if len(args) == 0 || containsEntity(diff, args...) {
-				err = outputTransaction(ctx, os.Stdout, current)
+				err = outputTransaction(ctx, pagedOutput, current)
 				if err != nil {
 					logrus.Fatal(err)
 				}
