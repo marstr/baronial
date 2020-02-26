@@ -163,13 +163,11 @@ $ baronial balance budget/grocery
 Want to see a list of transactions that you've input? The `log` command was made for exactly this:
 
 ```bash
-$ baronial log accounts/us_bank/checking | less
+$ baronial log accounts/us_bank/checking
 ```
 
 Providing the extra parameter `accounts/us_bank/checking` will filter the transactions that are printed to just the ones
-that touched that account. Sending the results to a different program, in this case 
-[`less`](https://en.wikipedia.org/wiki/Less_(Unix\)), can help to format or control lengthy or unwieldy results.
-
+that touched that account. 
 ## Install
 
 ### Build from Source
