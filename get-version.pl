@@ -25,8 +25,10 @@ my $version = `perl ./ancestors.pl | perl ./max-version.pl`;
 $version =~ s/\s+$//;
 my $revision = `perl ./get-revision.pl`;
 $revision =~ s/\s+$//;
+my $current = `git rev-parse ${version}`;
+$current =~ s/\s+$//;
 
-if(`git rev-parse ${version}` ne $revision){
+if($current ne $revision){
     $version = $version . "-modified";
 }
 
