@@ -26,7 +26,6 @@ import (
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/index"
@@ -39,12 +38,15 @@ var logCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) error {
 		return nil
 	},
+	PreRunE: setPagedCobraOutput,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
+		var err error
 
-		root, err := index.RootDirectory(".")
+		var root string
+		root, err = index.RootDirectory(".")
 		if err != nil {
-			logrus.Fatal(err)
+			return
 		}
 
 		persister := persist.FileSystem{Root: filepath.Join(root, index.RepoName)}
@@ -54,18 +56,15 @@ var logCmd = &cobra.Command{
 
 		currentID, err := persister.Current(ctx)
 		if err != nil {
-			logrus.Fatal(err)
+			return
 		}
-
-		var output io.Writer
-		output, err = getPageWriter(ctx)
 
 		for !isEmptyID(currentID) {
 			// TODO: refactor so that if parent was already loaded below, current re-uses that pre-loaded instance.
 			var current envelopes.Transaction
 			err = reader.Load(ctx, currentID, &current)
 			if err != nil {
-				logrus.Fatal(err)
+				return
 			}
 
 			var diff envelopes.Impact
@@ -76,16 +75,16 @@ var logCmd = &cobra.Command{
 				var parent envelopes.Transaction
 				err = reader.Load(ctx, current.Parent, &parent)
 				if err != nil {
-					logrus.Fatal(err)
+					return
 				}
 
 				diff = current.State.Subtract(*parent.State)
 			}
 
 			if len(args) == 0 || containsEntity(diff, args...) {
-				err = outputTransaction(ctx, output, current)
+				err = outputTransaction(ctx, cmd.OutOrStdout(), current)
 				if err != nil {
-					logrus.Fatal(err)
+					return
 				}
 			}
 			currentID = current.Parent
