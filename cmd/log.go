@@ -57,6 +57,9 @@ var logCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
+		var output io.Writer
+		output, err = getPageWriter(ctx)
+
 		for !isEmptyID(currentID) {
 			// TODO: refactor so that if parent was already loaded below, current re-uses that pre-loaded instance.
 			var current envelopes.Transaction
@@ -80,7 +83,7 @@ var logCmd = &cobra.Command{
 			}
 
 			if len(args) == 0 || containsEntity(diff, args...) {
-				err = outputTransaction(ctx, pagedOutput, current)
+				err = outputTransaction(ctx, output, current)
 				if err != nil {
 					logrus.Fatal(err)
 				}
