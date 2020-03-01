@@ -38,16 +38,16 @@ type diffCmd struct {
 }
 
 func init() {
-	diff := NewDiffCmd()
+	diff := newDiffCmd()
 
 	rootCmd.AddCommand(&diff.Command)
 }
 
-func NewDiffCmd() *diffCmd {
-	return NewDiffCmdWithContext(context.Background())
+func newDiffCmd() *diffCmd {
+	return newDiffCmdWithContext(context.Background())
 }
 
-func NewDiffCmdWithContext(ctx context.Context) *diffCmd {
+func newDiffCmdWithContext(ctx context.Context) *diffCmd {
 	retval := &diffCmd{
 		Context: ctx,
 	}
@@ -119,13 +119,13 @@ func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envel
 	}
 
 	loadFromRepository := func(ctx context.Context, rs persist.RefSpec) (*envelopes.State, error) {
-		var targetId envelopes.ID
-		targetId, err = resolver.Resolve(ctx, rs)
+		var targetID envelopes.ID
+		targetID, err = resolver.Resolve(ctx, rs)
 		if err != nil {
 			return nil, err
 		}
 		var target envelopes.Transaction
-		err = loader.Load(ctx, targetId, &target)
+		err = loader.Load(ctx, targetID, &target)
 		if err != nil {
 			return nil, err
 		}

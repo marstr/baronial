@@ -23,8 +23,11 @@ func setPagedCobraOutput(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
+// NewPageWriteCloser creates a stream writer that copies its output into a program like `less` or `more` to show output
+// slowly, allowing a human to page through. Do remember to call `Close`, or you may mess up where Stdout is pointing in
+// your shell.
 func NewPageWriteCloser(outFile *os.File, errFile *os.File) (io.WriteCloser, error) {
-	retval := &PageWriteCloser{}
+	retval := &pageWriteCloser{}
 	if terminal.IsTerminal(int(outFile.Fd())) {
 		var err error
 		if pagingPrograms == nil || len(pagingPrograms) == 0 {
@@ -52,13 +55,13 @@ func NewPageWriteCloser(outFile *os.File, errFile *os.File) (io.WriteCloser, err
 	return retval, nil
 }
 
-type PageWriteCloser struct {
+type pageWriteCloser struct {
 	procStart sync.Once
 	handle io.WriteCloser
 	childProc *exec.Cmd
 }
 
-func (pwc *PageWriteCloser) Write(p []byte) (int, error) {
+func (pwc *pageWriteCloser) Write(p []byte) (int, error) {
 	var err error
 	pwc.procStart.Do(func(){
 		if pwc.childProc != nil{
@@ -71,7 +74,7 @@ func (pwc *PageWriteCloser) Write(p []byte) (int, error) {
 	return pwc.handle.Write(p)
 }
 
-func (pwc *PageWriteCloser) Close() error {
+func (pwc *pageWriteCloser) Close() error {
 	err := pwc.handle.Close()
 	if err != nil {
 		return err
