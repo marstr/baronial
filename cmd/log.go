@@ -21,11 +21,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/index"
@@ -46,6 +48,7 @@ var logCmd = &cobra.Command{
 		var root string
 		root, err = index.RootDirectory(".")
 		if err != nil {
+			logrus.Error(err)
 			return
 		}
 
@@ -56,6 +59,7 @@ var logCmd = &cobra.Command{
 
 		currentID, err := persister.Current(ctx)
 		if err != nil {
+			logrus.Error(err)
 			return
 		}
 
@@ -64,6 +68,7 @@ var logCmd = &cobra.Command{
 			var current envelopes.Transaction
 			err = reader.Load(ctx, currentID, &current)
 			if err != nil {
+				logrus.Error(err)
 				return
 			}
 
@@ -75,6 +80,7 @@ var logCmd = &cobra.Command{
 				var parent envelopes.Transaction
 				err = reader.Load(ctx, current.Parent, &parent)
 				if err != nil {
+					logrus.Error(err)
 					return
 				}
 
@@ -84,6 +90,12 @@ var logCmd = &cobra.Command{
 			if len(args) == 0 || containsEntity(diff, args...) {
 				err = outputTransaction(ctx, cmd.OutOrStdout(), current)
 				if err != nil {
+					if cast, ok := err.(*os.PathError); ok {
+						if cast.Path == "|1" {
+							return
+						}
+					}
+					logrus.Error(err)
 					return
 				}
 			}
