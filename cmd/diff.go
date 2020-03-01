@@ -82,7 +82,8 @@ func (dc diffCmd) run(cmd *cobra.Command, args []string) {
 	var err error
 	defer func(){
 		if err != nil {
-			logrus.Fatal(err)
+			logrus.Error(err)
+			return
 		}
 	}()
 
@@ -92,7 +93,8 @@ func (dc diffCmd) run(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	left, right, err := getDiffStates(dc.Context, args, repoRoot)
+	var left, right *envelopes.State
+	left, right, err = getDiffStates(dc.Context, args, repoRoot)
 	if err != nil {
 		return
 	}
