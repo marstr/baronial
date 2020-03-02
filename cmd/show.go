@@ -114,9 +114,21 @@ func prettyPrintTransaction(
 	fmt.Fprintf(output, "Comment: \t%s\n", subject.Comment)
 	fmt.Fprintf(output, "Impacts:\n")
 
-	fmt.Fprintf(output, "\tAccounts:\n")
+	prettyPrintImpact(output, impacts)
+
+	return nil
+}
+
+func prettyPrintImpact(output io.Writer, impacts envelopes.Impact) (err error) {
+	_ , err = fmt.Fprintf(output, "\tAccounts:\n")
+	if err != nil {
+		return
+	}
 	for acc, delta := range impacts.Accounts {
-		fmt.Fprintf(output, "\t\t%s: %s\n", acc, delta)
+		_ , err = fmt.Fprintf(output, "\t\t%s: %s\n", acc, delta)
+		if err != nil {
+			return
+		}
 	}
 
 	flattened := flattenBudgets(impacts)
@@ -127,12 +139,15 @@ func prettyPrintTransaction(
 	}
 	sort.Strings(sortedBudgetNames)
 
-	fmt.Fprintf(output, "\tBudgets:\n")
+	_ , err = fmt.Fprintf(output, "\tBudgets:\n")
 	for _, name := range sortedBudgetNames {
-		fmt.Fprintf(output, "\t\t%s: %s\n", name, flattened[name])
+		_ , err = fmt.Fprintf(output, "\t\t%s: %s\n", name, flattened[name])
+		if err != nil {
+			return
+		}
 	}
 
-	return nil
+	return
 }
 
 func flattenBudgets(diff envelopes.Impact) map[string]envelopes.Balance {

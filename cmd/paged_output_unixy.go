@@ -8,9 +8,6 @@ import (
 
 var pagingPrograms = []exec.Cmd{
 	{
-		Path: "less",
-	},
-	{
 		Path: "more",
 	},
 }

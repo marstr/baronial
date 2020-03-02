@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -39,12 +40,16 @@ var logCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) error {
 		return nil
 	},
+	PreRunE: setPagedCobraOutput,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
+		var err error
 
-		root, err := index.RootDirectory(".")
+		var root string
+		root, err = index.RootDirectory(".")
 		if err != nil {
-			logrus.Fatal(err)
+			logrus.Error(err)
+			return
 		}
 
 		persister := persist.FileSystem{Root: filepath.Join(root, index.RepoName)}
@@ -54,7 +59,8 @@ var logCmd = &cobra.Command{
 
 		currentID, err := persister.Current(ctx)
 		if err != nil {
-			logrus.Fatal(err)
+			logrus.Error(err)
+			return
 		}
 
 		for !isEmptyID(currentID) {
@@ -62,7 +68,8 @@ var logCmd = &cobra.Command{
 			var current envelopes.Transaction
 			err = reader.Load(ctx, currentID, &current)
 			if err != nil {
-				logrus.Fatal(err)
+				logrus.Error(err)
+				return
 			}
 
 			var diff envelopes.Impact
@@ -73,16 +80,23 @@ var logCmd = &cobra.Command{
 				var parent envelopes.Transaction
 				err = reader.Load(ctx, current.Parent, &parent)
 				if err != nil {
-					logrus.Fatal(err)
+					logrus.Error(err)
+					return
 				}
 
 				diff = current.State.Subtract(*parent.State)
 			}
 
 			if len(args) == 0 || containsEntity(diff, args...) {
-				err = outputTransaction(ctx, pagedOutput, current)
+				err = outputTransaction(ctx, cmd.OutOrStdout(), current)
 				if err != nil {
-					logrus.Fatal(err)
+					if cast, ok := err.(*os.PathError); ok {
+						if cast.Path == "|1" {
+							return
+						}
+					}
+					logrus.Error(err)
+					return
 				}
 			}
 			currentID = current.Parent
