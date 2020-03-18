@@ -16,9 +16,9 @@ jobs:
 
   steps:
     - task: GoTool@0
-      displayName: 'Use Go 1.12'
+      displayName: 'Use Go 1.13'
       inputs:
-        version: 1.12
+        version: 1.13
     - script: |
         set -ev
         mkdir -p ~/go
@@ -48,9 +48,9 @@ jobs:
 
   steps:
   - task: GoTool@0
-    displayName: 'Use Go 1.12'
+    displayName: 'Use Go 1.13'
     inputs:
-      version: 1.12
+      version: 1.13
   - script: |
       go mod download
     displayName: 'Download Go Dependencies'
@@ -88,9 +88,9 @@ jobs:
 
   steps:
   - task: GoTool@0
-    displayName: 'Use Go 1.12'
+    displayName: 'Use Go 1.13'
     inputs:
-      version: 1.12
+      version: 1.13
   - script: |
       go mod download
     displayName: 'Download Dependencies'
