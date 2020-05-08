@@ -84,7 +84,7 @@ jobs:
 
   condition: succeeded()
   pool:
-      name: Hosted
+      name: 'Azure Pipelines'
 
   steps:
   - task: GoTool@0
