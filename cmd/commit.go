@@ -58,10 +58,17 @@ const (
 )
 
 const (
-	timeFlag      = "time"
-	timeShorthand = "t"
-	timeDefault   = "<current date/time>"
-	timeUsage     = "The time and date when this transaction occurred."
+	postedTimeFlag      = "posted-time"
+	postedTimeShorthand = "p"
+	postedTimeDefault   = "<current date/time>"
+	postedTimeUsage     = "The time and date when the transaction was posted by your financial institution."
+)
+
+const (
+	actualTimeFlag = "actual-time"
+	actualTimeShorthand = "t"
+	actualTimeDefault = "<posted date/time>"
+	actualTimeUsage = "The time and date when this transaction occurred."
 )
 
 const (
@@ -77,14 +84,22 @@ var commitCmd = &cobra.Command{
 	Use:   "commit",
 	Short: "Create a transaction with the current impacts in the index.",
 	Args: func(cmd *cobra.Command, args []string) error {
-		if commitConfig.IsSet(timeFlag) {
-			if currentValue := commitConfig.GetString(timeFlag); currentValue == timeDefault {
-				commitConfig.SetDefault(timeFlag, time.Now())
+		if commitConfig.IsSet(postedTimeFlag) {
+			if currentValue := commitConfig.GetString(postedTimeFlag); currentValue == postedTimeDefault {
+				commitConfig.SetDefault(postedTimeFlag, time.Now())
 			}
 		}
+		if finalTimeValue := commitConfig.GetTime(postedTimeFlag); finalTimeValue.Equal(time.Time{}) {
+			return fmt.Errorf("unable to parse time from %q", commitConfig.GetString(postedTimeFlag))
+		}
 
-		if finalTimeValue := commitConfig.GetTime(timeFlag); finalTimeValue.Equal(time.Time{}) {
-			return fmt.Errorf("unable to parse time from %q", commitConfig.GetString(timeFlag))
+		if commitConfig.IsSet(actualTimeFlag) {
+			if currentValue := commitConfig.GetString(actualTimeFlag); currentValue == actualTimeDefault {
+				commitConfig.SetDefault(actualTimeFlag, commitConfig.GetString(postedTimeFlag))
+			}
+		}
+		if finalTimeValue := commitConfig.GetTime(actualTimeFlag); finalTimeValue.Equal(time.Time{}) {
+			return fmt.Errorf("unable to parse time from %q", commitConfig.GetString(actualTimeFlag))
 		}
 
 		if !commitConfig.IsSet(amountFlag) {
@@ -184,7 +199,8 @@ var commitCmd = &cobra.Command{
 				Accounts: accounts,
 				Budget:   budget,
 			},
-			PostedTime:   commitConfig.GetTime(timeFlag),
+			ActualTime: commitConfig.GetTime(actualTimeFlag),
+			PostedTime:   commitConfig.GetTime(postedTimeFlag),
 			EnteredTime: time.Now(),
 			Parent: parent,
 		}
@@ -215,7 +231,8 @@ func init() {
 
 	commitCmd.PersistentFlags().StringP(merchantFlag, merchantShorthand, merchantDefault, merchantUsage)
 	commitCmd.PersistentFlags().StringP(commentFlag, commentShorthand, commentDefault, commentUsage)
-	commitCmd.PersistentFlags().StringP(timeFlag, timeShorthand, timeDefault, timeUsage)
+	commitCmd.PersistentFlags().StringP(postedTimeFlag, postedTimeShorthand, postedTimeDefault, postedTimeUsage)
+	commitCmd.PersistentFlags().StringP(actualTimeFlag, actualTimeShorthand, actualTimeDefault, actualTimeUsage)
 	commitCmd.PersistentFlags().StringP(amountFlag, amountShorthand, commitConfig.GetString(amountFlag), amountUsage)
 	commitCmd.PersistentFlags().BoolP(forceFlag, forceShorthand, forceDefault, forceUsage)
 
