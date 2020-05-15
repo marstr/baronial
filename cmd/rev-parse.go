@@ -43,7 +43,6 @@ var revParseCmd = &cobra.Command{
 
 		fs := &persist.FileSystem{Root: path.Join(root, index.RepoName)}
 		resolver := persist.RefSpecResolver{
-			Fetcher: fs,
 			Loader: persist.DefaultLoader{Fetcher: fs},
 			Brancher: fs,
 		}

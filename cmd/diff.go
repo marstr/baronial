@@ -117,7 +117,6 @@ func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envel
 	resolver := persist.RefSpecResolver{
 		Loader:   loader,
 		Brancher: fs,
-		Fetcher:  fs,
 	}
 
 	loadFromRepository := func(ctx context.Context, rs persist.RefSpec) (*envelopes.State, error) {

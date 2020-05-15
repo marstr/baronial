@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/marstr/envelopes"
+	"math/big"
 	"testing"
 	"time"
 )
@@ -38,14 +39,14 @@ func TestLoadBudget(t *testing.T) {
 		return
 	}
 
-	want := envelopes.Balance(1234)
+	want := envelopes.Balance{"USD":big.NewRat(1234, 100)}
 
-	if got := result.Balance; got != want {
+	if got := result.Balance; !got.Equal(want) {
 		t.Logf("Raw Balance:\n\tgot:  %v\n\twant: %v", got, want)
 		t.Fail()
 	}
 
-	if got := result.RecursiveBalance(); got != want {
+	if got := result.RecursiveBalance(); !got.Equal(want) {
 		t.Logf("Recursive Balance:\n\tgot:  %v\n\twant: %v", got, want)
 		t.Fail()
 	}
@@ -62,7 +63,7 @@ func TestLoadAccounts(t *testing.T) {
 		{
 			"./testdata/test1/accounts",
 			map[string]envelopes.Balance{
-				"citi/checking": 1234,
+				"citi/checking": {"USD": big.NewRat(1234, 100)},
 			},
 		},
 	}
@@ -84,7 +85,7 @@ func TestLoadAccounts(t *testing.T) {
 					continue
 				}
 
-				if got != want {
+				if !got.Equal(want) {
 					t.Logf("%s\n\tgot:  %v\n\twant: %v", name, got, want)
 					t.Fail()
 				}

@@ -36,9 +36,9 @@ Amazon credit card through Chase, with the following balances:
 
 | Account Type | Institution | Balance  |
 | :----------: | :---------: | :------: |
-| Checking     | U.S. Bank   | $703.56  |
-| Savings      | U.S. Bank   | $2801.22 |
-| Credit Card  | Chase       | $168.91  |
+| Checking     | U.S. Bank   | USD 703.56  |
+| Savings      | U.S. Bank   | USD 2801.22 |
+| Credit Card  | Chase       | USD 168.91  |
 
 You could initialize your accounts by running the following:
 
@@ -55,18 +55,18 @@ Notice that because the balance on your credit card is a [liability](https://www
 , we use the `debit` command. This is unlike the U.S. Bank accounts, which use the `credit` command, because they are 
 holding [assets](https://www.investopedia.com/terms/a/asset.asp).
 
-Now our accounts are tracking $3,335.87 in value. However, now that we know where our money is, we need to allocate it
+Now our accounts are tracking USD 3,335.87 in value. However, now that we know where our money is, we need to allocate it
 as we intend on spending it. That's the job of the budget. When everything's working well, the sum of funds available in
 the `accounts` folder should match the amount in the `budget` folder.
 
-Let's say we pay $1,200/month in rent, we could set aside that money by running:
+Let's say we pay USD 1,200/month in rent, we could set aside that money by running:
 
 ```bash
 $ mkdir -p budget/housing/rent
 $ baronial credit 1200 budget/housing/rent
 ```
 
-From there, we still have $2,135.87 to work with. Let's say we put some money towards gas and groceries, and the rest in
+From there, we still have USD 2,135.87 to work with. Let's say we put some money towards gas and groceries, and the rest in
 generic savings:
 
 ```bash
@@ -88,7 +88,7 @@ $ baronial commit -c "Initial account and budget balances."
 #### Recording Expenses
 
 Each time you spend money, you should add a transaction in the repository capturing the account and budget that it came
-from. For instance, I buy coffee most mornings for $2.15 from the Café downstairs. To capture one coffee purchase, I
+from. For instance, I buy coffee most mornings for USD 2.15 from the Café downstairs. To capture one coffee purchase, I
 would type:
 
 ```bash
@@ -96,7 +96,7 @@ $ baronial debit 2.15 accounts/chase/amazon budget/grocery
 $ baronial commit -m "Brewed Awakenings" -t 2019-08-01 -c "My usual morning ritual"
 ```
 
-The debit command above removes $2.15 from both my credit card and my grocery budget (I know, I know, coffee from a shop
+The debit command above removes USD 2.15 from both my credit card and my grocery budget (I know, I know, coffee from a shop
 isn't exactly a grocery expense. You can categorize things however you choose.) Notice, that I can subtract the same
 amount from two sources at once. This will be the most common situation, as most transactions will be categorized in a
 single way. But keep in mind that if you need to split up a transaction, it isn't until the `commit` command is run that

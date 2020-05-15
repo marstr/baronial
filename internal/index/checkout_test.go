@@ -3,6 +3,7 @@ package index
 import (
 	"context"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"path"
 	"testing"
@@ -17,22 +18,22 @@ func TestCheckoutState_roundtrip(t *testing.T) {
 	testCases := []*envelopes.State{
 		{
 			Accounts: map[string]envelopes.Balance{
-				"checking": 10096,
-				"savings": 478302,
+				"checking": {"USD": big.NewRat(10096, 100)},
+				"savings":  {"USD": big.NewRat(478302, 100)},
 			},
 			Budget: &envelopes.Budget{
-				Balance: 488398,
+				Balance: envelopes.Balance{"USD": big.NewRat(488398, 100)},
 			},
 		},
 		{
 			Accounts: map[string]envelopes.Balance{
-				"checking": 10096,
-				"savings": 478302,
+				"checking": {"USD": big.NewRat(10096, 100)},
+				"savings": {"USD": big.NewRat(478302, 100)},
 			},
 			Budget: &envelopes.Budget{
 				Children: map[string]*envelopes.Budget{
-					"foo": {Balance: 10096},
-					"bar": {Balance: 478302},
+					"foo": {Balance: envelopes.Balance{"USD": big.NewRat(10096, 100)}},
+					"bar": {Balance: envelopes.Balance{"USD": big.NewRat(478302, 100)}},
 				},
 			},
 		},
@@ -74,7 +75,7 @@ func TestCheckoutState_roundtrip(t *testing.T) {
 			}
 
 			if diff.Budget != nil {
-				if diff.Budget.Balance != 0 || len(diff.Budget.Children) > 0 {
+				if !diff.Budget.Balance.Equal(envelopes.Balance{}) || len(diff.Budget.Children) > 0 {
 					t.Logf("Budget balances didn't match.")
 					t.Fail()
 				}

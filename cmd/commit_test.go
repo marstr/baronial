@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math/big"
 	"strings"
 	"testing"
 	"time"
@@ -130,9 +131,13 @@ func getTestPromptText(ctx context.Context) func(*testing.T) {
 			input.Reset()
 			output.Reset()
 
-			fmt.Fprintln(input)
+			_, err := fmt.Fprintln(input)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
 
-			_, err := promptToContinue(ctx, tc, output, input)
+			_, err = promptToContinue(ctx, tc, output, input)
 			if err != nil {
 				t.Error(err)
 				continue
@@ -163,43 +168,43 @@ func getTestDepositAmount(ctx context.Context) func(*testing.T) {
 				Name: "simple_deposit",
 				Original: envelopes.State{
 					Accounts: envelopes.Accounts{
-						"checking": 10000,
+						"checking": envelopes.Balance{"USD": big.NewRat(10000, 100)},
 					},
 					Budget: &envelopes.Budget{
 						Children: map[string]*envelopes.Budget{
 							"groceries": {
-								Balance: 5000,
+								Balance: envelopes.Balance{"USD": big.NewRat(5000, 100)},
 							},
 							"entertainment": {
-								Balance: 5000,
+								Balance: envelopes.Balance{"USD": big.NewRat(5000, 100)},
 							},
 						},
 					},
 				},
 				Updated: envelopes.State{
 					Accounts: envelopes.Accounts{
-						"checking": 15000,
+						"checking": envelopes.Balance{"USD": big.NewRat(15000, 100)},
 					},
 					Budget: &envelopes.Budget{
 						Children: map[string]*envelopes.Budget{
 							"groceries": {
-								Balance: 7500,
+								Balance: envelopes.Balance{"USD": big.NewRat(7500, 100)},
 							},
 							"entertainment": {
-								Balance: 7500,
+								Balance: envelopes.Balance{"USD": big.NewRat(7500, 100)},
 							},
 						},
 					},
 				},
-				Want: 5000,
+				Want: envelopes.Balance{"USD": big.NewRat(5000, 100)},
 			},
 		}
 
 		for _, tc := range testCases {
 			got := findAmount(tc.Original, tc.Updated)
 
-			if got != tc.Want {
-				t.Logf("%s: got: %d want: %d", tc.Name, got, tc.Want)
+			if !got.Equal(tc.Want) {
+				t.Logf("%s: got: %s want: %s", tc.Name, got, tc.Want)
 				t.Fail()
 			}
 		}
@@ -222,43 +227,43 @@ func getTestCreditAmount(ctx context.Context) func(*testing.T) {
 				Name: "simple_credit",
 				Original: envelopes.State{
 					Accounts: envelopes.Accounts{
-						"checking": 10000,
+						"checking": envelopes.Balance{"USD": big.NewRat(10000, 100)},
 					},
 					Budget: &envelopes.Budget{
 						Children: map[string]*envelopes.Budget{
 							"groceries": {
-								Balance: 5000,
+								Balance: envelopes.Balance{"USD": big.NewRat(5000, 100)},
 							},
 							"entertainment": {
-								Balance: 5000,
+								Balance: envelopes.Balance{"USD": big.NewRat(5000, 100)},
 							},
 						},
 					},
 				},
 				Updated: envelopes.State{
 					Accounts: envelopes.Accounts{
-						"checking": 5000,
+						"checking": envelopes.Balance{"USD": big.NewRat(5000, 100)},
 					},
 					Budget: &envelopes.Budget{
 						Children: map[string]*envelopes.Budget{
 							"groceries": {
-								Balance: 5000,
+								Balance: envelopes.Balance{"USD": big.NewRat(5000, 100)},
 							},
 							"entertainment": {
-								Balance: 0,
+								Balance: envelopes.Balance{"USD": big.NewRat(0, 100)},
 							},
 						},
 					},
 				},
-				Want: -5000,
+				Want: envelopes.Balance{"USD": big.NewRat(-5000, 100)},
 			},
 		}
 
 		for _, tc := range testCases {
 			got := findAmount(tc.Original, tc.Updated)
 
-			if got != tc.Want {
-				t.Logf("%s: got: %d want: %d", tc.Name, got, tc.Want)
+			if !got.Equal(tc.Want) {
+				t.Logf("%s: got: %s want: %s", tc.Name, got, tc.Want)
 				t.Fail()
 			}
 		}
@@ -281,42 +286,42 @@ func getTestAccountTransferAmount(ctx context.Context) func(*testing.T) {
 				Name: "two-party",
 				Original: envelopes.State{
 					Accounts: map[string]envelopes.Balance{
-						"checking": 10000,
-						"savings":  0,
+						"checking": {"USD": big.NewRat(10000, 100)},
+						"savings":  {"USD": big.NewRat(0, 1)},
 					},
 				},
 				Updated: envelopes.State{
 					Accounts: map[string]envelopes.Balance{
-						"checking": 5000,
-						"savings":  5000,
+						"checking": {"USD": big.NewRat(5000, 100)},
+						"savings":  {"USD": big.NewRat(5000, 100)},
 					},
 				},
-				Want: 5000,
+				Want: envelopes.Balance{"USD": big.NewRat(5000, 100)},
 			},
 			{
 				Name: "three-party",
 				Original: envelopes.State{
 					Accounts: map[string]envelopes.Balance{
-						"checking": 2200000,
-						"savings":  4000000,
+						"checking": {"USD": big.NewRat(2200000, 100)},
+						"savings":  {"USD": big.NewRat(4000000, 100)},
 					},
 				},
 				Updated: envelopes.State{
 					Accounts: map[string]envelopes.Balance{
-						"checking": 500000,
-						"savings":  0,
-						"escrow":   5700000,
+						"checking": {"USD": big.NewRat(500000, 100)},
+						"savings":  {"USD": big.NewRat(0, 1)},
+						"escrow":   {"USD": big.NewRat(5700000, 100)},
 					},
 				},
-				Want: 5700000,
+				Want: envelopes.Balance{"USD": big.NewRat(5700000, 100)},
 			},
 		}
 
 		for _, tc := range testCases {
 			got := findAmount(tc.Original, tc.Updated)
 
-			if got != tc.Want {
-				t.Logf("%s: got: %d want: %d", tc.Name, got, tc.Want)
+			if !got.Equal(tc.Want) {
+				t.Logf("%s: got: %s want: %s", tc.Name, got, tc.Want)
 				t.Fail()
 			}
 		}
@@ -341,10 +346,10 @@ func getTestBudgetTransferAmount(ctx context.Context) func(*testing.T) {
 					Budget: &envelopes.Budget{
 						Children: map[string]*envelopes.Budget{
 							"child1": {
-								Balance: 4590,
+								Balance: envelopes.Balance{"USD": big.NewRat(4590, 100)},
 							},
 							"child2": {
-								Balance: 1000,
+								Balance: envelopes.Balance{"USD": big.NewRat(1000, 100)},
 							},
 						},
 					},
@@ -353,15 +358,15 @@ func getTestBudgetTransferAmount(ctx context.Context) func(*testing.T) {
 					Budget: &envelopes.Budget{
 						Children: map[string]*envelopes.Budget{
 							"child1": {
-								Balance: 2250,
+								Balance: envelopes.Balance{"USD": big.NewRat(2250, 100)},
 							},
 							"child2": {
-								Balance: 3340,
+								Balance: envelopes.Balance{"USD": big.NewRat(3340, 100)},
 							},
 						},
 					},
 				},
-				Want: 2340,
+				Want: envelopes.Balance{"USD": big.NewRat(2340, 100)},
 			},
 			{
 				Name: "three-parties",
@@ -369,13 +374,13 @@ func getTestBudgetTransferAmount(ctx context.Context) func(*testing.T) {
 					Budget: &envelopes.Budget{
 						Children: map[string]*envelopes.Budget{
 							"child1": {
-								Balance: 20000,
+								Balance: envelopes.Balance{"USD": big.NewRat(20000, 100)},
 							},
 							"child2": {
-								Balance: 0,
+								Balance: envelopes.Balance{"USD": big.NewRat(0, 1)},
 							},
 							"child3": {
-								Balance: 0,
+								Balance: envelopes.Balance{"USD": big.NewRat(0, 1)},
 							},
 						},
 					},
@@ -384,26 +389,26 @@ func getTestBudgetTransferAmount(ctx context.Context) func(*testing.T) {
 					Budget: &envelopes.Budget{
 						Children: map[string]*envelopes.Budget{
 							"child1": {
-								Balance: 10000,
+								Balance: envelopes.Balance{"USD": big.NewRat(10000, 100)},
 							},
 							"child2": {
-								Balance: 7500,
+								Balance: envelopes.Balance{"USD": big.NewRat(7500, 100)},
 							},
 							"child3": {
-								Balance: 2500,
+								Balance: envelopes.Balance{"USD": big.NewRat(2500, 100)},
 							},
 						},
 					},
 				},
-				Want: 10000,
+				Want: envelopes.Balance{"USD": big.NewRat(10000, 100)},
 			},
 		}
 
 		for _, tc := range testCases {
 			got := findAmount(tc.Original, tc.Updated)
 
-			if got != tc.Want {
-				t.Logf("%s: got: %d want: %d", tc.Name, got, tc.Want)
+			if !got.Equal(tc.Want) {
+				t.Logf("%s: got: %s want: %s", tc.Name, got, tc.Want)
 				t.Fail()
 			}
 		}

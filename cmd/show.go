@@ -22,12 +22,14 @@ import (
 	"os"
 	"path"
 	"sort"
+	"time"
 
-	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/marstr/baronial/internal/index"
 )
 
 var showCmd = &cobra.Command{
@@ -58,7 +60,6 @@ for the sake of brevity. This command shows all known details of a transaction.`
 		resolver := persist.RefSpecResolver{
 			Loader: loader,
 			Brancher: persister,
-			Fetcher: persister,
 		}
 
 		var targetID envelopes.ID
@@ -93,7 +94,7 @@ func prettyPrintTransaction(
 	output io.Writer,
 	loader persist.Loader,
 	subject envelopes.Transaction) error {
-
+	var err error
 	var impacts envelopes.Impact
 
 	if subject.Parent.Equal(envelopes.ID{}) {
@@ -107,16 +108,46 @@ func prettyPrintTransaction(
 		impacts = subject.State.Subtract(*parent.State)
 	}
 
-	fmt.Fprintf(output, "Time:    \t%s\n", subject.Time)
-	fmt.Fprintf(output, "Merchant:\t%s\n", subject.Merchant)
-	fmt.Fprintf(output, "Amount:  \t%s\n", subject.Amount)
-	fmt.Fprintf(output, "Parent:  \t%s\n", subject.Parent)
-	fmt.Fprintf(output, "Comment: \t%s\n", subject.Comment)
-	fmt.Fprintf(output, "Impacts:\n")
+	if !subject.ActualTime.Equal(time.Time{}) {
+		_, err = fmt.Fprintf(output, "Actual Time:    \t%s\n", subject.ActualTime)
+		if err != nil {
+			return err
+		}
+	}
+	if !subject.PostedTime.Equal(time.Time{}) {
+		_, err = fmt.Fprintf(output, "Posted Time:    \t%s\n", subject.PostedTime)
+		if err != nil {
+			return err
+		}
+	}
+	if !subject.EnteredTime.Equal(time.Time{}) {
+		_, err = fmt.Fprintf(output, "Entered Time:    \t%s\n", subject.EnteredTime)
+		if err != nil {
+			return err
+		}
+	}
+	_, err = fmt.Fprintf(output, "Merchant:\t%s\n", subject.Merchant)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(output, "Amount:  \t%s\n", subject.Amount)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(output, "Parent:  \t%s\n", subject.Parent)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(output, "Comment: \t%s\n", subject.Comment)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(output, "Impacts:\n")
+	if err != nil {
+		return err
+	}
 
-	prettyPrintImpact(output, impacts)
-
-	return nil
+	return prettyPrintImpact(output, impacts)
 }
 
 func prettyPrintImpact(output io.Writer, impacts envelopes.Impact) (err error) {
@@ -160,7 +191,7 @@ func flattenBudgets(diff envelopes.Impact) map[string]envelopes.Balance {
 
 		fullName := path.Join(running, name)
 
-		if current.Balance != 0 {
+		if !current.Balance.Equal(envelopes.Balance{}) {
 			retval[fullName] = current.Balance
 		}
 

@@ -16,15 +16,16 @@
 package cmd
 
 import (
-	"fmt"
+	"context"
 	"os"
 	"path/filepath"
 
-	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/marstr/baronial/internal/index"
 )
 
 var initCmd = &cobra.Command{
@@ -32,7 +33,12 @@ var initCmd = &cobra.Command{
 	Short: "Creates a new Baronial repository.",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(_ *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		const initCmdFailurePrefix = "unable to initialize repository: "
+
+		const initialBranch = persist.DefaultBranch
 
 		var targetDir string
 		if len(args) > 0 {
@@ -67,18 +73,15 @@ var initCmd = &cobra.Command{
 			Root: index.RepoName,
 		}
 
-		location, err := persister.CurrentPath()
+		err := persister.WriteBranch(ctx, initialBranch, envelopes.ID{})
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		handle, err := os.Create(location)
+		err = persister.SetCurrent(ctx, initialBranch)
 		if err != nil {
 			logrus.Fatal(err)
 		}
-
-		fmt.Fprintln(handle, envelopes.ID{})
-		handle.Close()
 	},
 }
 
