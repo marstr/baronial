@@ -28,6 +28,10 @@ import (
 
 // WriteBudget takes the memoized Budget and commits it to the current baronial index.
 func WriteBudget(ctx context.Context, targetDir string, budget envelopes.Budget) error {
+	if len(budget.Balance) == 0 {
+		return nil
+	}
+
 	targetFile := filepath.Join(targetDir, cashName)
 	handle, err := os.Create(targetFile)
 	if err != nil {
