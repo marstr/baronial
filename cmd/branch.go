@@ -61,6 +61,7 @@ var branchCmd = &cobra.Command{
 			resolver := persist.RefSpecResolver{
 				Loader:   persist.DefaultLoader{Fetcher: fs},
 				Brancher: fs,
+				CurrentReader: fs,
 			}
 
 			var target envelopes.ID

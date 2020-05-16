@@ -45,6 +45,7 @@ var revParseCmd = &cobra.Command{
 		resolver := persist.RefSpecResolver{
 			Loader: persist.DefaultLoader{Fetcher: fs},
 			Brancher: fs,
+			CurrentReader: fs,
 		}
 
 		id, err := resolver.Resolve(ctx, persist.RefSpec(args[0]))
