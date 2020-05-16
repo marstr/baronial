@@ -45,7 +45,7 @@ var creditCmd = &cobra.Command{
 		defer cancel()
 
 		rawMagnitude := args[0]
-		magnitude, err := envelopes.ParseBalance(rawMagnitude)
+		magnitude, err := envelopes.ParseBalance([]byte(rawMagnitude))
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -56,7 +56,7 @@ var creditCmd = &cobra.Command{
 				logrus.Fatal(err)
 			}
 
-			bdg.Balance += magnitude
+			bdg.Balance = bdg.Balance.Add(magnitude)
 			err = index.WriteBudget(ctx, rawBudget, *bdg)
 			if err != nil {
 				logrus.Fatal(err)
@@ -88,7 +88,7 @@ func creditDebitArgValidation(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("too few arguments (%d). %q requires at least a balance and one budget or account", argCount, cmd.Name())
 	}
 
-	if _, err := envelopes.ParseBalance(args[0]); err != nil {
+	if _, err := envelopes.ParseBalance([]byte(args[0])); err != nil {
 		return fmt.Errorf("%q not recognized as an amount", args[0])
 	}
 

@@ -58,7 +58,6 @@ var checkoutCmd = &cobra.Command{
 			resolver := persist.RefSpecResolver{
 				Loader:   persist.DefaultLoader{Fetcher: fs},
 				Brancher: fs,
-				Fetcher:  fs,
 			}
 
 			targetID, err = resolver.Resolve(ctx, requested)

@@ -50,7 +50,7 @@ var branchCmd = &cobra.Command{
 		repoDir := path.Join(indexRootDir, index.RepoName)
 		fs := &persist.FileSystem{Root: repoDir}
 
-		head, err := fs.CurrentRef(ctx)
+		head, err := fs.Current(ctx)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -61,7 +61,6 @@ var branchCmd = &cobra.Command{
 			resolver := persist.RefSpecResolver{
 				Loader:   persist.DefaultLoader{Fetcher: fs},
 				Brancher: fs,
-				Fetcher:  fs,
 			}
 
 			var target envelopes.ID

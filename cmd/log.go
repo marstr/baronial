@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
@@ -57,7 +58,19 @@ var logCmd = &cobra.Command{
 			Fetcher: persister,
 		}
 
-		currentID, err := persister.Current(ctx)
+		currentRef, err := persister.Current(ctx)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+
+		resolver := persist.RefSpecResolver{
+			Loader:        reader,
+			Brancher:      persister,
+			CurrentReader: persister,
+		}
+
+		currentID, err := resolver.Resolve(ctx, currentRef)
 		if err != nil {
 			logrus.Error(err)
 			return
@@ -169,9 +182,23 @@ func outputTransaction(_ context.Context, output io.Writer, subject envelopes.Tr
 	if err != nil {
 		return
 	}
-	_, err = fmt.Fprintf(output, "\tTime:    \t%v\n", subject.Time)
-	if err != nil {
-		return
+	if !subject.ActualTime.Equal(time.Time{}) {
+		_, err = fmt.Fprintf(output, "\tActual Time:    \t%v\n", subject.ActualTime)
+		if err != nil {
+			return
+		}
+	}
+	if !subject.PostedTime.Equal(time.Time{}) {
+		_, err = fmt.Fprintf(output, "\tPosted Time:    \t%v\n", subject.PostedTime)
+		if err != nil {
+			return
+		}
+	}
+	if !subject.EnteredTime.Equal(time.Time{}) {
+		_, err = fmt.Fprintf(output, "\tEntered Time:    \t%v\n", subject.EnteredTime)
+		if err != nil {
+			return
+		}
 	}
 	_, err = fmt.Fprintf(output, "\tAmount:  \t%s\n", subject.Amount)
 	if err != nil {

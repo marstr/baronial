@@ -122,7 +122,7 @@ func LoadAccounts(ctx context.Context, dirname string) (envelopes.Accounts, erro
 
 				trimmed := strings.TrimSpace(string(contents))
 
-				bal, err = envelopes.ParseBalance(trimmed)
+				bal, err = envelopes.ParseBalance([]byte(trimmed))
 				if err != nil {
 					return envelopes.Accounts{}, err
 				}
@@ -200,7 +200,7 @@ func LoadBudget(ctx context.Context, dirname string) (retval *envelopes.Budget, 
 				return
 			}
 
-			retval.Balance, err = envelopes.ParseBalance(string(contents))
+			retval.Balance, err = envelopes.ParseBalance(contents)
 			if err != nil {
 				return
 			}

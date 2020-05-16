@@ -18,14 +18,20 @@ package index
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/marstr/envelopes"
 )
 
 // WriteBudget takes the memoized Budget and commits it to the current baronial index.
 func WriteBudget(ctx context.Context, targetDir string, budget envelopes.Budget) error {
+	if len(budget.Balance) == 0 {
+		return nil
+	}
+
 	targetFile := filepath.Join(targetDir, cashName)
 	handle, err := os.Create(targetFile)
 	if err != nil {
@@ -33,6 +39,24 @@ func WriteBudget(ctx context.Context, targetDir string, budget envelopes.Budget)
 	}
 	defer handle.Close()
 
-	_, err = fmt.Fprintln(handle, budget.Balance)
+	return writeBalance(ctx, handle, budget.Balance)
+}
+
+func writeBalance(_ context.Context, output io.Writer, bal envelopes.Balance) error {
+	var err error
+	assetTypes := make([]string, 0, len(bal))
+
+	for k := range bal {
+		assetTypes = append(assetTypes, string(k))
+	}
+
+	sort.Strings(assetTypes)
+
+	for i := range assetTypes {
+		_, err = fmt.Fprintf(output, "%s %s\n", assetTypes[i], bal[envelopes.AssetType(assetTypes[i])].FloatString(3))
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

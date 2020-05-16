@@ -36,7 +36,7 @@ var debitCmd = &cobra.Command{
 		defer cancel()
 
 		rawMagnitude := args[0]
-		magnitude, err := envelopes.ParseBalance(rawMagnitude)
+		magnitude, err := envelopes.ParseBalance([]byte(rawMagnitude))
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -47,7 +47,7 @@ var debitCmd = &cobra.Command{
 				logrus.Fatal(err)
 			}
 
-			bdg.Balance -= magnitude
+			bdg.Balance = bdg.Balance.Sub(magnitude)
 			err = index.WriteBudget(ctx, targetDir, *bdg)
 			if err != nil {
 				logrus.Fatal(err)
