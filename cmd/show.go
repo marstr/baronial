@@ -60,6 +60,7 @@ for the sake of brevity. This command shows all known details of a transaction.`
 		resolver := persist.RefSpecResolver{
 			Loader: loader,
 			Brancher: persister,
+			CurrentReader: persister,
 		}
 
 		var targetID envelopes.ID
