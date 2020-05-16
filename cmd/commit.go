@@ -67,7 +67,7 @@ const (
 const (
 	actualTimeFlag = "actual-time"
 	actualTimeShorthand = "t"
-	actualTimeDefault = "<posted date/time>"
+	actualTimeDefault = "<empty>"
 	actualTimeUsage = "The time and date when this transaction occurred."
 )
 
@@ -95,10 +95,10 @@ var commitCmd = &cobra.Command{
 
 		if commitConfig.IsSet(actualTimeFlag) {
 			if currentValue := commitConfig.GetString(actualTimeFlag); currentValue == actualTimeDefault {
-				commitConfig.SetDefault(actualTimeFlag, commitConfig.GetString(postedTimeFlag))
+				commitConfig.SetDefault(actualTimeFlag, "")
 			}
 		}
-		if finalTimeValue := commitConfig.GetTime(actualTimeFlag); finalTimeValue.Equal(time.Time{}) {
+		if finalTimeValue := commitConfig.GetTime(actualTimeFlag); commitConfig.GetString(actualTimeFlag) != "" && finalTimeValue.Equal(time.Time{}) {
 			return fmt.Errorf("unable to parse time from %q", commitConfig.GetString(actualTimeFlag))
 		}
 
