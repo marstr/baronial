@@ -20,6 +20,8 @@ github.com/marstr/collection v1.0.1 h1:j61osRfyny7zxBlLRtoCvOZ2VX7HEyybkZcsLNLJ0
 github.com/marstr/collection v1.0.1/go.mod h1:HHDXVxjLO3UYCBXJWY+J/ZrxCUOYqrO66ob1AzIsmYA=
 github.com/marstr/envelopes v0.2.1 h1:YBjHf/9B3iP7SI8vxrj+MDW8poirIwD6mnLOP0kU1MA=
 github.com/marstr/envelopes v0.2.1/go.mod h1:Fgfk7O6FXSoONxPFZuxNIDNf0nZW1EkWZOHLYE8S6f0=
+github.com/marstr/envelopes v0.2.2 h1:mGDxcFajKMbXYXCQz+sWOEHpwTIIjgWm/Bjk3Zvp/Qo=
+github.com/marstr/envelopes v0.2.2/go.mod h1:Fgfk7O6FXSoONxPFZuxNIDNf0nZW1EkWZOHLYE8S6f0=
 github.com/marstr/units v1.0.1 h1:J1oBku8rInztZY9IO0W2fS1bZ60UotlmBLbyvyZLoSU=
 github.com/marstr/units v1.0.1/go.mod h1:B1/IxDKETT7FwLuU0ZOvdPePP9chjt0PLTt+qeVARJ8=
 github.com/mitchellh/go-homedir v0.0.0-20161203194507-b8bc1bf76747/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
