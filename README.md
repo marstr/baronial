@@ -1,6 +1,6 @@
 # Baronial
 
-[![Build Status](https://mstrobel.visualstudio.com/Envelopes/_apis/build/status/Baronial-CI?branchName=master)](https://mstrobel.visualstudio.com/Envelopes/_build/latest?definitionId=7?branchName=master)
+[![Build Status](https://mstrobel.visualstudio.com/Envelopes/_apis/build/status/Baronial-CI?branchName=main)](https://mstrobel.visualstudio.com/Envelopes/_build/latest?definitionId=7?branchName=master)
 
 Manage your personal finances with all of the power of a scriptable command-line tool, using Baronial!
 
