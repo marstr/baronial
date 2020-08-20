@@ -130,7 +130,7 @@ not making a decision that impacts the budget. You're just making a decision abo
 want to be receiving or paying interest based on your circumstances.
 
 For baronial, this is the same as a debit and a credit for the same amount against different accounts. However, it's a
-common enough operation that there's a short-cure for this:
+common enough operation that there's a shortcut for this:
 
 ```bash
 $ baronial transfer 168.91 accounts/us_bank/checking accounts/chase/amazon
