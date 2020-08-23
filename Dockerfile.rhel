@@ -1,0 +1,32 @@
+ARG tag=8
+
+FROM centos:${tag} AS rpm-builder
+
+RUN dnf install -y gcc rpm-build rpm-devel rpmlint make bash diffutils patch rpmdevtools go perl git
+RUN rpmdev-setuptree
+
+WORKDIR /usr/src/baronial
+
+COPY go.* ./
+
+RUN go mod download
+
+ADD . .
+
+ARG release=1
+RUN make baronial.tar.gz && \
+    version=$(cat ./version.txt) && \
+    rpm_version=$(echo ${version} | perl ./packaging/redhat/redhatify-version.pl) && \
+    cp ./baronial.tar.gz ${HOME}/rpmbuild/SOURCES/ && \
+    mv ${HOME}/rpmbuild/SOURCES/baronial.tar.gz ${HOME}/rpmbuild/SOURCES/baronial-${rpm_version}.tar.gz && \
+    rpmbuild --define "raw_version ${version}" --define "rpm_version ${rpm_version}" --define "release ${release}" -ba ./packaging/redhat/baronial.spec
+
+FROM centos:${tag} AS execution
+
+WORKDIR /root
+
+COPY --from=rpm-builder /root/rpmbuild/RPMS/x86_64/baronial-*.rpm ./baronial.rpm
+
+RUN rpm -i baronial.rpm && rm baronial.rpm
+
+CMD /bin/bash
