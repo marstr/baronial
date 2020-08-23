@@ -31,6 +31,9 @@ fedora31: bin/linux/baronial.fc31.src.rpm bin/linux/baronial.fc31.x86_64.rpm bin
 .PHONY: fedora32
 fedora32: bin/linux/baronial.fc32.src.rpm bin/linux/baronial.fc32.x86_64.rpm bin/docker/baronial-fedora32.tar.gz
 
+.PHONY: el8
+el8: bin/linux/baronial.el8.src.rpm bin/linux/baronial.el8.x86_64.rpm bin/docker/baronial-el8.tar.gz
+
 .PHONY: opensuse
 opensuse: bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/docker/baronial-opensuse_leap151.tar.gz
 
@@ -38,7 +41,7 @@ opensuse: bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm b
 alpine: bin/docker/baronial-alpine.tar.gz
 
 .PHONY: rpm
-rpm: bin/linux/baronial.fc29.src.rpm bin/linux/baronial.fc29.x86_64.rpm bin/linux/baronial.fc30.src.rpm bin/linux/baronial.fc30.x86_64.rpm bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm
+rpm: bin/linux/baronial.fc29.src.rpm bin/linux/baronial.fc29.x86_64.rpm bin/linux/baronial.fc30.src.rpm bin/linux/baronial.fc30.x86_64.rpm bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/linux/baronial.el8.x86_64.rpm bin/linux/baronial.el8.src.rpm
 
 version.txt: ${SRC} go.sum
 	perl ./get-version.pl > version.txt
@@ -120,6 +123,20 @@ bin/linux/baronial.fc32.x86_64.rpm: bin/docker/baronial-fedora32.tar.gz version.
 	mkdir -p bin/linux
 	${DOCKER} run --rm marstr/baronial:fedora32-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc32.x86_64.rpm > bin/linux/baronial.fc32.x86_64.rpm
 
+bin/docker/baronial-el8.tar.gz: ${SRC} Dockerfile.rhel
+	mkdir -p bin/docker
+	${DOCKER} build --build-arg tag=8 -t marstr/baronial:el8-rpm-builder -f Dockerfile.rhel --target rpm-builder .
+	${DOCKER} build --build-arg tag=8 -t marstr/baronial:el8 -f Dockerfile.rhel .
+	${DOCKER} save marstr/baronial:el8 | gzip > bin/docker/baronial-el8.tar.gz
+
+bin/linux/baronial.el8.src.rpm: bin/docker/baronial-el8.tar.gz version.txt
+	mkdir -p bin/linux
+	${DOCKER} run --rm marstr/baronial:el8-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.el8.src.rpm > bin/linux/baronial.el8.src.rpm
+
+bin/linux/baronial.el8.x86_64.rpm: bin/docker/baronial-el8.tar.gz version.txt
+	mkdir -p bin/linux
+	${DOCKER} run --rm marstr/baronial:el8-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.el8.x86_64.rpm > bin/linux/baronial.el8.x86_64.rpm
+
 bin/docker/baronial-opensuse_leap151.tar.gz: ${SRC} Dockerfile.opensuse_leap
 	mkdir -p bin/docker
 	${DOCKER} build --build-arg tag=15.1 -t marstr/baronial:leap151-rpm-builder -f Dockerfile.opensuse_leap --target rpm-builder .
@@ -183,3 +200,6 @@ clean:
 	${DOCKER} rmi -f marstr/baronial:fedora32 2>/dev/null || echo 'Skipping Fedora 32 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:leap151-rpm-builder 2>/dev/null || echo 'Skipping openSUSE Leap 15.1 RPM Builder Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:leap151 2>/dev/null || echo 'Skipping openSUSE Leap 15.1 Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:el8-rpm-builder 2>/dev/null || echo 'Skipping Enterprise Linux 8 RPM Build Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:el8 2>/dev/null || echo 'Skipping Enterprise Linux 8 Docker Image Delete' > /dev/null
+
