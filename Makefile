@@ -5,7 +5,7 @@ DOCKER?=docker
 
 # Define high-level build targets.
 .PHONY: all
-all: darwin linux windows test lint baronial.tar.gz
+all: darwin linux windows test lint docker rpm
 
 .PHONY: linux
 linux: bin/linux/baronial.gz
@@ -17,13 +17,10 @@ darwin: bin/darwin/baronial.gz
 windows: bin/windows/baronial.exe
 
 .PHONY: docker
-docker: bin/docker/baronial-alpine.tar.gz bin/docker/baronial-debian.tar.gz bin/docker/baronial-fedora30.tar.gz bin/docker/baronial-fedora31.tar.gz
+docker: bin/docker/baronial-alpine.tar.gz bin/docker/baronial-debian.tar.gz bin/docker/baronial-fedora31.tar.gz bin/docker/baronial-fedora32.tar.gz bin/docker/baronial-el8.tar.gz
 
 .PHONY: fedora
-fedora: fedora30 fedora31 fedora32
-
-.PHONY: fedora30
-fedora30: bin/linux/baronial.fc30.src.rpm bin/linux/baronial.fc30.x86_64.rpm bin/docker/baronial-fedora30.tar.gz
+fedora: fedora31 fedora32
 
 .PHONY: fedora31
 fedora31: bin/linux/baronial.fc31.src.rpm bin/linux/baronial.fc31.x86_64.rpm bin/docker/baronial-fedora31.tar.gz
@@ -41,7 +38,7 @@ opensuse: bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm b
 alpine: bin/docker/baronial-alpine.tar.gz
 
 .PHONY: rpm
-rpm: bin/linux/baronial.fc29.src.rpm bin/linux/baronial.fc29.x86_64.rpm bin/linux/baronial.fc30.src.rpm bin/linux/baronial.fc30.x86_64.rpm bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/linux/baronial.el8.x86_64.rpm bin/linux/baronial.el8.src.rpm
+rpm: bin/linux/baronial.fc31.src.rpm bin/linux/baronial.fc31.x86_64.rpm bin/linux/baronial.fc32.src.rpm bin/linux/baronial.fc32.x86_64.rpm bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/linux/baronial.el8.x86_64.rpm bin/linux/baronial.el8.src.rpm
 
 version.txt: ${SRC} go.sum
 	perl ./get-version.pl > version.txt
@@ -80,20 +77,6 @@ bin/docker/baronial-debian.tar.gz: ${SRC} Dockerfile.debian
 	mkdir -p bin/docker
 	${DOCKER} build -t marstr/baronial:debian -f Dockerfile.debian .
 	${DOCKER} save marstr/baronial:debian | gzip > bin/docker/baronial-debian.tar.gz
-
-bin/docker/baronial-fedora30.tar.gz: ${SRC} Dockerfile.fedora
-	mkdir -p bin/docker
-	${DOCKER} build --build-arg tag=30 -t marstr/baronial:fedora30-rpm-builder -f Dockerfile.fedora --target rpm-builder .
-	${DOCKER} build --build-arg tag=30 -t marstr/baronial:fedora30 -f Dockerfile.fedora .
-	${DOCKER} save marstr/baronial:fedora30 | gzip > bin/docker/baronial-fedora30.tar.gz
-
-bin/linux/baronial.fc30.src.rpm: bin/docker/baronial-fedora30.tar.gz version.txt
-	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:fedora30-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc30.src.rpm > bin/linux/baronial.fc30.src.rpm
-
-bin/linux/baronial.fc30.x86_64.rpm: bin/docker/baronial-fedora30.tar.gz version.txt
-	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:fedora30-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc30.x86_64.rpm > bin/linux/baronial.fc30.x86_64.rpm
 
 bin/docker/baronial-fedora31.tar.gz: ${SRC} Dockerfile.fedora
 	mkdir -p bin/docker
@@ -192,8 +175,6 @@ clean:
 	rm -rf .semaphores
 	${DOCKER} rmi -f marstr/baronial:debian 2>/dev/null || echo 'Skipping Debian Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:alpine 2>/dev/null || echo 'Skipping Alpine Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora30-rpm-builder 2>/dev/null || echo 'Skipping Fedora 30 RPM Builder Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora30 2>/dev/null || echo 'Skipping Fedora 30 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:fedora31-rpm-builder 2>/dev/null || echo 'Skipping Fedora 31 RPM Builder Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:fedora31 2>/dev/null || echo 'Skipping Fedora 31 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:fedora32-rpm-builder 2>/dev/null || echo 'Skipping Fedora 32 RPM Builder Docker Image Delete' > /dev/stderr
