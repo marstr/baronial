@@ -6,8 +6,7 @@ License: GPLv3
 Source0: ./baronial-%{rpm_version}.tar.gz
 
 %define debug_package %{nil}
-
-BuildRequires: make go git
+BuildRequires: make go git perl
 
 %prep
 %setup -q -n baronial-%{raw_version}
