@@ -53,10 +53,15 @@ var logCmd = &cobra.Command{
 			return
 		}
 
-		persister := persist.FileSystem{Root: filepath.Join(root, index.RepoName)}
+		persister := persist.FileSystem{
+			Root: filepath.Join(root, index.RepoName),
+		}
 		reader := persist.DefaultLoader{
 			Fetcher: persister,
 		}
+		cache := persist.NewCache(2000)
+		cache.Loader = reader
+		reader.Loopback = cache
 
 		currentRef, err := persister.Current(ctx)
 		if err != nil {
