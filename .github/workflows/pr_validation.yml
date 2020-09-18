@@ -25,6 +25,11 @@ jobs:
       - name: Test
         run: make test
 
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Baronial Linux
+          path: bin/linux/baronial
+
   build-windows:
     runs-on: windows-latest
 
@@ -37,6 +42,11 @@ jobs:
       - name: Test
         run: go test -v ./...
 
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Baronial Windows
+          path: bin/windows/baronial.exe
+
   build-darwin:
     runs-on: macos-latest
 
@@ -46,3 +56,7 @@ jobs:
         run: make darwin
       - name: Test
         run: make test
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Baronial Darwin
+          path: bin/darwin/baronial
