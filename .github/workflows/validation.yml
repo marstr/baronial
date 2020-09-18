@@ -40,3 +40,13 @@ jobs:
 
       - name: Test
         run: go test -v ./...
+
+  build-darwin:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: make darwin
+      - name: Test
+        run: make test
