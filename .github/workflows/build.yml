@@ -1,0 +1,89 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  release:
+    types:
+      - created
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Build
+        run: make linux
+      - name: Test
+        run: make test
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Baronial Linux
+          path: bin/linux/baronial
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Build
+        run: .\make.bat
+      - name: Test
+        run: go test -v ./...
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Baronial Windows
+          path: bin/windows/baronial.exe
+
+  build-darwin:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Build
+        run: make darwin
+      - name: Test
+        run: make test
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Baronial Darwin
+          path: bin/darwin/baronial
+
+  build-fedora31:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+          with:
+            fetch-depth: 0
+        - name: Build
+          run: |
+            make bin/linux/baronial.fc31.src.rpm bin/linux/baronial.fc31.x86_64.rpm
+        - uses: actions/upload-artifact@v2
+          with:
+            name: baronial.fc31.src.rpm
+            path: bin/linux/baronial.fc31.src.rpm
+        - uses: actions/upload-artifact@v2
+          with:
+            name: baronial.fc31.x86_64.rpm
+            path: bin/linux/baronial.fc31.x86_64.rpm
+  build-fedora32:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Build
+        run: |
+          make bin/linux/baronial.fc32.src.rpm bin/linux/baronial.fc32.x86_64.rpm
+      - uses: actions/upload-artifact@v2
+        with:
+          name: baronial.fc32.src.rpm
+          path: bin/linux/baronial.fc32.src.rpm
+      - uses: actions/upload-artifact@v2
+        with:
+          name: baronial.fc32.x86_64.rpm
+          path: bin/linux/baronial.fc32.x86_64.rpm
