@@ -1,6 +1,6 @@
 # Baronial
 
-[![Build Status](https://mstrobel.visualstudio.com/Envelopes/_apis/build/status/Baronial-CI?branchName=main)](https://mstrobel.visualstudio.com/Envelopes/_build/latest?definitionId=7?branchName=master)
+[![Build](https://github.com/marstr/baronial/workflows/Build/badge.svg)](https://github.com/marstr/baronial/actions?query=workflow%3ABuild) [![PkgGoDev](https://pkg.go.dev/badge/github.com/marstr/baronial)](https://pkg.go.dev/github.com/marstr/baronial)
 
 Manage your personal finances with all of the power of a scriptable command-line tool, using Baronial!
 
