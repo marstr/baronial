@@ -1,7 +1,5 @@
 name: CI
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the main branch
 on:
   push:
     branches: [ main ]
@@ -11,25 +9,17 @@ on:
     types:
       - created
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build-linux:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-
-      # Runs a single command using the runners shell
+        with:
+          fetch-depth: 0
       - name: Build
         run: make linux
-
       - name: Test
         run: make test
-
       - uses: actions/upload-artifact@v2
         with:
           name: Baronial Linux
@@ -37,16 +27,14 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v2
-
+        with:
+          fetch-depth: 0
       - name: Build
         run: .\make.bat
-
       - name: Test
         run: go test -v ./...
-
       - uses: actions/upload-artifact@v2
         with:
           name: Baronial Windows
@@ -54,9 +42,10 @@ jobs:
 
   build-darwin:
     runs-on: macos-latest
-
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Build
         run: make darwin
       - name: Test
@@ -66,9 +55,37 @@ jobs:
           name: Baronial Darwin
           path: bin/darwin/baronial
 
-  build-rpm:
+  build-fedora31:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v2
+          with:
+            fetch-depth: 0
         - name: Build
-          run: make rpm
+          run: |
+            make bin/linux/baronial.fc31.src.rpm bin/linux/baronial.fc31.x86_64.rpm
+        - uses: actions/upload-artifact@v2
+          with:
+            name: baronial.fc31.src.rpm
+            path: bin/linux/baronial.fc31.src.rpm
+        - uses: actions/upload-artifact@v2
+          with:
+            name: baronial.fc31.x86_64.rpm
+            path: bin/linux/baronial.fc31.x86_64.rpm
+  build-fedora32:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Build
+        run: |
+          make bin/linux/baronial.fc32.src.rpm bin/linux/baronial.fc32.x86_64.rpm
+      - uses: actions/upload-artifact@v2
+        with:
+          name: baronial.fc32.src.rpm
+          path: bin/linux/baronial.fc32.src.rpm
+      - uses: actions/upload-artifact@v2
+        with:
+          name: baronial.fc32.x86_64.rpm
+          path: bin/linux/baronial.fc32.x86_64.rpm
