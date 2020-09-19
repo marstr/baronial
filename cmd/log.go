@@ -70,7 +70,7 @@ var logCmd = &cobra.Command{
 		}
 
 		resolver := persist.RefSpecResolver{
-			Loader:        reader,
+			Loader:        cache,
 			Brancher:      persister,
 			CurrentReader: persister,
 		}
@@ -84,7 +84,7 @@ var logCmd = &cobra.Command{
 		for !isEmptyID(currentID) {
 			// TODO: refactor so that if parent was already loaded below, current re-uses that pre-loaded instance.
 			var current envelopes.Transaction
-			err = reader.Load(ctx, currentID, &current)
+			err = cache.Load(ctx, currentID, &current)
 			if err != nil {
 				logrus.Error(err)
 				return
@@ -96,7 +96,7 @@ var logCmd = &cobra.Command{
 				diff = envelopes.Impact(*current.State)
 			} else {
 				var parent envelopes.Transaction
-				err = reader.Load(ctx, current.Parent, &parent)
+				err = cache.Load(ctx, current.Parent, &parent)
 				if err != nil {
 					logrus.Error(err)
 					return
