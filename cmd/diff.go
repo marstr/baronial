@@ -28,6 +28,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/marstr/baronial/internal/format"
 	"github.com/marstr/baronial/internal/index"
 )
 
@@ -101,7 +102,7 @@ func (dc diffCmd) run(cmd *cobra.Command, args []string) {
 
 	diff := left.Subtract(*right)
 
-	err = prettyPrintImpact(cmd.OutOrStdout(), diff)
+	err = format.PrettyPrintImpact(cmd.OutOrStdout(), diff)
 	if err != nil {
 		return
 	}

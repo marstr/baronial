@@ -19,18 +19,16 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/marstr/baronial/internal/format"
 	"github.com/marstr/baronial/internal/index"
 )
 
@@ -101,7 +99,7 @@ var logCmd = &cobra.Command{
 			}
 
 			if len(args) == 0 || containsEntity(diff, args...) {
-				err = outputTransaction(ctx, cmd.OutOrStdout(), current)
+				err = format.ConcisePrintTransaction(ctx, cmd.OutOrStdout(), current)
 				if err != nil {
 					if cast, ok := err.(*os.PathError); ok {
 						if cast.Path == "|1" {
@@ -177,43 +175,7 @@ func isEmptyID(subject envelopes.ID) bool {
 	return true
 }
 
-func outputTransaction(_ context.Context, output io.Writer, subject envelopes.Transaction) (err error) {
-	_, err = fmt.Fprintln(output, subject.ID())
-	if err != nil {
-		return
-	}
-	if !subject.ActualTime.Equal(time.Time{}) {
-		_, err = fmt.Fprintf(output, "\tActual Time:    \t%v\n", subject.ActualTime)
-		if err != nil {
-			return
-		}
-	}
-	if !subject.PostedTime.Equal(time.Time{}) {
-		_, err = fmt.Fprintf(output, "\tPosted Time:    \t%v\n", subject.PostedTime)
-		if err != nil {
-			return
-		}
-	}
-	if !subject.EnteredTime.Equal(time.Time{}) {
-		_, err = fmt.Fprintf(output, "\tEntered Time:    \t%v\n", subject.EnteredTime)
-		if err != nil {
-			return
-		}
-	}
-	_, err = fmt.Fprintf(output, "\tAmount:  \t%s\n", subject.Amount)
-	if err != nil {
-		return
-	}
-	_, err = fmt.Fprintf(output, "\tMerchant:\t%s\n", subject.Merchant)
-	if err != nil {
-		return
-	}
-	_, err = fmt.Fprintf(output, "\tComment: \t%s\n", subject.Comment)
-	if err != nil {
-		return
-	}
-	return nil
-}
+
 
 func init() {
 	rootCmd.AddCommand(logCmd)
