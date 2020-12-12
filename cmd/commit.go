@@ -78,6 +78,13 @@ const (
 	forceUsage     = "Ignore warnings, commit the transaction anyway."
 )
 
+const (
+	bankRecordIdFlag = "bank-record-id"
+	bankRecordIdShorthand = "b"
+	bankRecordIdDefault = ""
+	bankRecordIdUsage = "A unique ID assigned to this transaction by a financial institution."
+)
+
 var commitConfig = viper.New()
 
 var commitCmd = &cobra.Command{
@@ -195,6 +202,7 @@ var commitCmd = &cobra.Command{
 			Amount:   amount,
 			Merchant: commitConfig.GetString(merchantFlag),
 			Comment:  commitConfig.GetString(commentFlag),
+			RecordId: envelopes.BankRecordID(commitConfig.GetString(bankRecordIdFlag)),
 			State: &envelopes.State{
 				Accounts: accounts,
 				Budget:   budget,
@@ -234,6 +242,7 @@ func init() {
 	commitCmd.PersistentFlags().StringP(postedTimeFlag, postedTimeShorthand, postedTimeDefault, postedTimeUsage)
 	commitCmd.PersistentFlags().StringP(actualTimeFlag, actualTimeShorthand, actualTimeDefault, actualTimeUsage)
 	commitCmd.PersistentFlags().StringP(amountFlag, amountShorthand, commitConfig.GetString(amountFlag), amountUsage)
+	commitCmd.PersistentFlags().StringP(bankRecordIdFlag, bankRecordIdShorthand, bankRecordIdDefault, bankRecordIdUsage)
 	commitCmd.PersistentFlags().BoolP(forceFlag, forceShorthand, forceDefault, forceUsage)
 
 	err := commitConfig.BindPFlags(commitCmd.PersistentFlags())
