@@ -60,6 +60,12 @@ func ConcisePrintTransaction(_ context.Context, output io.Writer, subject envelo
 	if err != nil {
 		return
 	}
+	if subject.RecordId != "" {
+		_, err = fmt.Fprintf(output, "\tBank Record ID:\t%s\n", subject.RecordId)
+		if err != nil {
+			return err
+		}
+	}
 	_, err = fmt.Fprintf(output, "\tComment: \t%s\n", subject.Comment)
 	if err != nil {
 		return
@@ -110,6 +116,12 @@ func PrettyPrintTransaction(
 	_, err = fmt.Fprintf(output, "Merchant:\t%s\n", subject.Merchant)
 	if err != nil {
 		return err
+	}
+	if subject.RecordId != "" {
+		_, err = fmt.Fprintf(output, "Bank Record ID:\t%s\n", subject.RecordId)
+		if err != nil {
+			return err
+		}
 	}
 	_, err = fmt.Fprintf(output, "Amount:  \t%s\n", subject.Amount)
 	if err != nil {
