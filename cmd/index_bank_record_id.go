@@ -43,9 +43,11 @@ const (
 	briOutputOptionAny = "any"
 )
 
-var briSupportedOutputFormats = map[string]struct{}{
-	briOutputOptionNone: {},
-	briOutputOptionAny: {},
+type briImplementation func(context.Context, persist.FilesystemBankRecordIDIndex, envelopes.BankRecordID) (int8, error)
+
+var briSupportedOutputFormats = map[string]briImplementation {
+	briOutputOptionNone: processAnyRequest(ioutil.Discard),
+	briOutputOptionAny: processAnyRequest(os.Stdout),
 }
 
 type ErrBriUnrecognizedOutputFormat string
@@ -94,6 +96,7 @@ any -> Prints "true" if any transactions are associated with it, "false" otherwi
 		rootDir, err = index.RootDirectory(".")
 		if err != nil {
 			logrus.Error(err)
+			return
 		}
 
 		recordFetcher := persist.FilesystemBankRecordIDIndex{
@@ -101,14 +104,16 @@ any -> Prints "true" if any transactions are associated with it, "false" otherwi
 		}
 
 		var exitCode int8
-		switch bankRecordIdConfig.GetString(briOutputFlag) {
-		case briOutputOptionNone:
-			exitCode, err = processAnyRequest(ctx, ioutil.Discard, recordFetcher, subject)
-		case briOutputOptionAny:
-			exitCode, err = processAnyRequest(ctx, os.Stdout, recordFetcher, subject)
-		default:
-			logrus.Error(err)
+		chosenOutput := bankRecordIdConfig.GetString(briOutputFlag)
+		operation, ok := briSupportedOutputFormats[chosenOutput]
+		if ok {
+			exitCode, err = operation(ctx, recordFetcher, subject)
+			if err != nil {
+				logrus.Error(err)
+			}
+		} else {
 			exitCode = 2
+			logrus.Error(ErrBriUnrecognizedOutputFormat(chosenOutput))
 		}
 
 		os.Exit(int(exitCode))
@@ -133,24 +138,26 @@ func init() {
 	bankRecordIdConfig.BindPFlags(bankRecordIdCmd.PersistentFlags())
 }
 
-func processAnyRequest(ctx context.Context, output io.Writer, indexReader persist.FilesystemBankRecordIDIndex, bri envelopes.BankRecordID) (int8, error) {
-	var exitCode int8
-	var any bool
-	var err error
-	any, err = indexReader.HasBankRecordId(bri)
-	if err != nil {
-		return -1, err
-	}
-	if any {
-		exitCode = 0
-	} else {
-		exitCode = 1
-	}
+func processAnyRequest(output io.Writer) briImplementation {
+	return func(ctx context.Context, indexReader persist.FilesystemBankRecordIDIndex, bri envelopes.BankRecordID) (int8, error) {
+		var exitCode int8
+		var any bool
+		var err error
+		any, err = indexReader.HasBankRecordId(bri)
+		if err != nil {
+			return -1, err
+		}
+		if any {
+			exitCode = 0
+		} else {
+			exitCode = 1
+		}
 
-	_, err = fmt.Fprintln(output, any)
-	if err != nil{
-		return exitCode, err
-	}
+		_, err = fmt.Fprintln(output, any)
+		if err != nil{
+			return exitCode, err
+		}
 
-	return exitCode, nil
+		return exitCode, nil
+	}
 }
