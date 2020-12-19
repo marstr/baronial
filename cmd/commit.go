@@ -174,8 +174,14 @@ var commitCmd = &cobra.Command{
 			Root: filepath.Join(targetDir, index.RepoName),
 		}
 
-		writer := persist.DefaultWriter{
+		var writer persist.Writer
+		writer = persist.DefaultWriter{
 			Stasher: persister,
+		}
+		
+		writer = persist.FilesystemBankRecordIDIndex{
+			Root:            filepath.Join(persister.Root, "indices", "bank_record_id"),
+			DecoratedWriter: writer,
 		}
 
 		loader := persist.DefaultLoader{
