@@ -202,7 +202,7 @@ var commitCmd = &cobra.Command{
 			Amount:   amount,
 			Merchant: commitConfig.GetString(merchantFlag),
 			Comment:  commitConfig.GetString(commentFlag),
-			RecordId: envelopes.BankRecordID(commitConfig.GetString(bankRecordIdFlag)),
+			RecordID: envelopes.BankRecordID(commitConfig.GetString(bankRecordIdFlag)),
 			State: &envelopes.State{
 				Accounts: accounts,
 				Budget:   budget,
