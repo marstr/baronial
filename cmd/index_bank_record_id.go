@@ -17,9 +17,14 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 
+	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -32,12 +37,21 @@ import (
 const (
 	briOutputFlag = "output-format"
 	briOutputShorthand = "f"
-	briOutputDefault = "none"
+	briOutputDefault = briOutputOptionNone
 	briOutputUsage = "How relevant transaction ID should be relayed."
+	briOutputOptionNone = "none"
+	briOutputOptionAny = "any"
 )
 
 var briSupportedOutputFormats = map[string]struct{}{
-	"none": {},
+	briOutputOptionNone: {},
+	briOutputOptionAny: {},
+}
+
+type ErrBriUnrecognizedOutputFormat string
+
+func (err ErrBriUnrecognizedOutputFormat) Error() string {
+	return fmt.Sprintf("unrecognized %s option provided: %q", briOutputFlag, string(err))
 }
 
 var bankRecordIdConfig = viper.New()
@@ -54,7 +68,8 @@ Status Code:
 
 When no transactions are associated with the given bank record ID, the exit
 status code will be set to 1. If even one transaction is associated with the
-bank's identifier, the exit status will be 0.'
+bank's identifier, the exit status will be 0.' In error conditions, a different
+value will be returned.
 
 Output Format:
 
@@ -64,11 +79,16 @@ any -> Prints "true" if any transactions are associated with it, "false" otherwi
 	Args: func(cmd *cobra.Command, args []string) error {
 		chosenOutput := bankRecordIdConfig.GetString(briOutputFlag)
 		if _, ok := briSupportedOutputFormats[chosenOutput]; !ok {
-			return fmt.Errorf("unrecognized %s option provided: %q", briOutputFlag, chosenOutput)
+			return ErrBriUnrecognizedOutputFormat(chosenOutput)
 		}
-		return cobra.MaximumNArgs(1)(cmd, args)
+		return cobra.ExactArgs(1)(cmd, args)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		subject := envelopes.BankRecordID(args[0])
+
 		var rootDir string
 		var err error
 		rootDir, err = index.RootDirectory(".")
@@ -80,7 +100,18 @@ any -> Prints "true" if any transactions are associated with it, "false" otherwi
 			Root: filepath.Join(rootDir, index.RepoName, repository.BankRecordIDIndexDirectory),
 		}
 
-		fmt.Printf("ready to read from: %s", recordFetcher.Root)
+		var exitCode int8
+		switch bankRecordIdConfig.GetString(briOutputFlag) {
+		case briOutputOptionNone:
+			exitCode, err = processAnyRequest(ctx, ioutil.Discard, recordFetcher, subject)
+		case briOutputOptionAny:
+			exitCode, err = processAnyRequest(ctx, os.Stdout, recordFetcher, subject)
+		default:
+			logrus.Error(err)
+			exitCode = 2
+		}
+
+		os.Exit(int(exitCode))
 	},
 }
 
@@ -100,4 +131,26 @@ func init() {
 	// bankRecordIdCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	bankRecordIdConfig.BindPFlags(bankRecordIdCmd.PersistentFlags())
+}
+
+func processAnyRequest(ctx context.Context, output io.Writer, indexReader persist.FilesystemBankRecordIDIndex, bri envelopes.BankRecordID) (int8, error) {
+	var exitCode int8
+	var any bool
+	var err error
+	any, err = indexReader.HasBankRecordId(bri)
+	if err != nil {
+		return -1, err
+	}
+	if any {
+		exitCode = 0
+	} else {
+		exitCode = 1
+	}
+
+	_, err = fmt.Fprintln(output, any)
+	if err != nil{
+		return exitCode, err
+	}
+
+	return exitCode, nil
 }
