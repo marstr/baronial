@@ -9,8 +9,9 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
-	golang.org/x/crypto v0.0.0-20190418165655-df01cb2cc480
-	golang.org/x/sys v0.0.0-20190419153524-e8e3143a4f4a // indirect
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
+	golang.org/x/text v0.3.3 // indirect
 )
 
 go 1.13
