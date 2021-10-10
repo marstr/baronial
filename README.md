@@ -1,6 +1,6 @@
 # Baronial
 
-[![Build](https://github.com/marstr/baronial/workflows/Build/badge.svg)](https://github.com/marstr/baronial/actions?query=workflow%3ABuild) [![PkgGoDev](https://pkg.go.dev/badge/github.com/marstr/baronial)](https://pkg.go.dev/github.com/marstr/baronial)
+[![Build](https://github.com/marstr/baronial/workflows/Build/badge.svg)](https://github.com/marstr/baronial/actions?query=workflow%3ABuild) [![PkgGoDev](https://pkg.go.dev/badge/github.com/marstr/baronial)](https://pkg.go.dev/github.com/marstr/baronial) [![Telegram](https://img.shields.io/badge/chat-telegram-informational?style=flat&logo=telegram)](https://t.me/baronial_chat)
 
 Manage your personal finances with all of the power of a scriptable command-line tool, using Baronial!
 
