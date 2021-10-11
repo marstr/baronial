@@ -87,20 +87,3 @@ jobs:
         with:
           name: baronial.fc34.x86_64.rpm
           path: bin/linux/baronial.fc34.x86_64.rpm
-  build-fedora35:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Build
-        run: |
-          make bin/linux/baronial.fc35.src.rpm bin/linux/baronial.fc35.x86_64.rpm
-      - uses: actions/upload-artifact@v2
-        with:
-          name: baronial.fc35.src.rpm
-          path: bin/linux/baronial.fc35.src.rpm
-      - uses: actions/upload-artifact@v2
-        with:
-          name: baronial.fc35.x86_64.rpm
-          path: bin/linux/baronial.fc35.x86_64.rpm
