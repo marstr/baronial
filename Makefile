@@ -20,13 +20,16 @@ windows: bin/windows/baronial.exe
 docker: bin/docker/baronial-alpine.tar.gz bin/docker/baronial-debian.tar.gz bin/docker/baronial-fedora33.tar.gz bin/docker/baronial-fedora34.tar.gz bin/docker/baronial-el8.tar.gz
 
 .PHONY: fedora
-fedora: fedora33 fedora34
+fedora: fedora33 fedora34 fedora35
 
 .PHONY: fedora33
 fedora33: bin/linux/baronial.fc33.src.rpm bin/linux/baronial.fc33.x86_64.rpm bin/docker/baronial-fedora33.tar.gz
 
 .PHONY: fedora34
 fedora34: bin/linux/baronial.fc34.src.rpm bin/linux/baronial.fc34.x86_64.rpm bin/docker/baronial-fedora34.tar.gz
+
+.PHONY: fedora35
+fedora35: bin/linux/baronial.fc35.src.rpm bin/linux/baronial.fc35.x86_64.rpm bin/docker/baronial-fedora35.tar.gz
 
 .PHONY: el8
 el8: bin/linux/baronial.el8.src.rpm bin/linux/baronial.el8.x86_64.rpm bin/docker/baronial-el8.tar.gz
@@ -106,6 +109,20 @@ bin/linux/baronial.fc34.x86_64.rpm: bin/docker/baronial-fedora34.tar.gz version.
 	mkdir -p bin/linux
 	${DOCKER} run --rm marstr/baronial:fedora34-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc34.x86_64.rpm > bin/linux/baronial.fc34.x86_64.rpm
 
+bin/docker/baronial-fedora35.tar.gz: ${SRC} Dockerfile.fedora
+	mkdir -p bin/docker
+	${DOCKER} build --build-arg tag=35 -t marstr/baronial:fedora35-rpm-builder -f Dockerfile.fedora --target rpm-builder .
+	${DOCKER} build --build-arg tag=35 -t marstr/baronial:fedora35 -f Dockerfile.fedora .
+	${DOCKER} save marstr/baronial:fedora35 | gzip > bin/docker/baronial-fedora35.tar.gz
+
+bin/linux/baronial.fc35.src.rpm: bin/docker/baronial-fedora35.tar.gz version.txt
+	mkdir -p bin/linux
+	${DOCKER} run --rm marstr/baronial:fedora35-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc35.src.rpm > bin/linux/baronial.fc35.src.rpm
+
+bin/linux/baronial.fc35.x86_64.rpm: bin/docker/baronial-fedora35.tar.gz version.txt
+	mkdir -p bin/linux
+	${DOCKER} run --rm marstr/baronial:fedora35-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc35.x86_64.rpm > bin/linux/baronial.fc35.x86_64.rpm
+
 bin/docker/baronial-el8.tar.gz: ${SRC} Dockerfile.rhel
 	mkdir -p bin/docker
 	${DOCKER} build --build-arg tag=8 -t marstr/baronial:el8-rpm-builder -f Dockerfile.rhel --target rpm-builder .
@@ -179,6 +196,8 @@ clean:
 	${DOCKER} rmi -f marstr/baronial:fedora33 2>/dev/null || echo 'Skipping Fedora 33 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:fedora34-rpm-builder 2>/dev/null || echo 'Skipping Fedora 34 RPM Builder Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:fedora34 2>/dev/null || echo 'Skipping Fedora 34 Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora35-rpm-builder 2>/dev/null || echo 'Skipping Fedora 35 RPM Builder Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora35 2>/dev/null || echo 'Skipping Fedora 35 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:leap151-rpm-builder 2>/dev/null || echo 'Skipping openSUSE Leap 15.1 RPM Builder Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:leap151 2>/dev/null || echo 'Skipping openSUSE Leap 15.1 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:el8-rpm-builder 2>/dev/null || echo 'Skipping Enterprise Linux 8 RPM Build Docker Image Delete' > /dev/stderr
