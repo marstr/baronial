@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/marstr/envelopes/persist/json"
 	"os"
 	"path"
 
@@ -46,34 +47,26 @@ for the sake of brevity. This command shows all known details of a transaction.`
 		}
 		root = path.Join(root, index.RepoName)
 
-		persister := persist.FileSystem{
-			Root: root,
-		}
-
-		loader := persist.DefaultLoader{
-			Fetcher: persister,
-		}
-
-		resolver := persist.RefSpecResolver{
-			Loader: loader,
-			Brancher: persister,
-			CurrentReader: persister,
+		var repo persist.RepositoryReader
+		repo, err = json.NewFileSystemRepository(root)
+		if err != nil {
+			logrus.Fatal(err)
 		}
 
 		var targetID envelopes.ID
 
-		targetID, err = resolver.Resolve(ctx, persist.RefSpec(args[0]))
+		targetID, err = persist.Resolve(ctx, repo, persist.RefSpec(args[0]))
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
 		var target envelopes.Transaction
-		err = loader.Load(ctx, targetID, &target)
+		err = repo.Load(ctx, targetID, &target)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		err = format.PrettyPrintTransaction(ctx, os.Stdout, loader, target)
+		err = format.PrettyPrintTransaction(ctx, os.Stdout, repo, target)
 		if err != nil {
 			logrus.Fatal(err)
 		}

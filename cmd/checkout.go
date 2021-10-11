@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/marstr/envelopes/persist/json"
 	"path"
 	"time"
 
@@ -34,10 +35,12 @@ var checkoutCmd = &cobra.Command{
 	Short: "Resets the index to show the balances at a particular transaction.",
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		var err error
 		ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
 		defer cancel()
 
-		root, err := index.RootDirectory(".")
+		var root string
+		root, err = index.RootDirectory(".")
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -45,34 +48,27 @@ var checkoutCmd = &cobra.Command{
 
 		requested := persist.RefSpec(args[0])
 
-		fs := persist.FileSystem{
-			Root: root,
+		var repo persist.RepositoryReaderWriter
+		repo, err = json.NewFileSystemRepository(root)
+		if err != nil {
+			logrus.Fatal(err)
 		}
 
 		var targetID envelopes.ID
-
-		if transactionID, err := fs.ReadBranch(ctx, (string)(requested)); err == nil {
+		var transactionID envelopes.ID
+		if transactionID, err = repo.ReadBranch(ctx, (string)(requested)); err == nil {
 			targetID = transactionID
 		} else {
 			logrus.Warn("checking out a RefSpec that isn't a branch can cause data loss")
-			resolver := persist.RefSpecResolver{
-				Loader:   persist.DefaultLoader{Fetcher: fs},
-				Brancher: fs,
-				CurrentReader: fs,
-			}
-
-			targetID, err = resolver.Resolve(ctx, requested)
+			targetID, err = persist.Resolve(ctx, repo, requested)
 			if err != nil {
 				logrus.Fatal(err)
 			}
 		}
 
-		loader := persist.DefaultLoader{
-			Fetcher: fs,
-		}
 
 		var target envelopes.Transaction
-		err = loader.Load(ctx, targetID, &target)
+		err = repo.Load(ctx, targetID, &target)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -82,7 +78,7 @@ var checkoutCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		err = fs.SetCurrent(ctx, requested)
+		err = repo.SetCurrent(ctx, requested)
 		if err != nil {
 			logrus.Fatal(err)
 		}

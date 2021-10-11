@@ -19,6 +19,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/marstr/envelopes/persist/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,24 +52,19 @@ var logCmd = &cobra.Command{
 			return
 		}
 
-		persister := persist.FileSystem{Root: filepath.Join(root, index.RepoName)}
-		reader := persist.DefaultLoader{
-			Fetcher: persister,
+		var repo persist.RepositoryReader
+		repo, err = json.NewFileSystemRepository(filepath.Join(root, index.RepoName))
+		if err != nil {
+			logrus.Fatal(err)
 		}
 
-		currentRef, err := persister.Current(ctx)
+		currentRef, err := repo.Current(ctx)
 		if err != nil {
 			logrus.Error(err)
 			return
 		}
 
-		resolver := persist.RefSpecResolver{
-			Loader:        reader,
-			Brancher:      persister,
-			CurrentReader: persister,
-		}
-
-		currentID, err := resolver.Resolve(ctx, currentRef)
+		currentID, err := persist.Resolve(ctx, repo, currentRef)
 		if err != nil {
 			logrus.Error(err)
 			return
@@ -77,7 +73,7 @@ var logCmd = &cobra.Command{
 		for !isEmptyID(currentID) {
 			// TODO: refactor so that if parent was already loaded below, current re-uses that pre-loaded instance.
 			var current envelopes.Transaction
-			err = reader.Load(ctx, currentID, &current)
+			err = repo.Load(ctx, currentID, &current)
 			if err != nil {
 				logrus.Error(err)
 				return
@@ -85,11 +81,11 @@ var logCmd = &cobra.Command{
 
 			var diff envelopes.Impact
 
-			if isEmptyID(current.Parent) {
+			if len(current.Parents) == 0 {
 				diff = envelopes.Impact(*current.State)
 			} else {
 				var parent envelopes.Transaction
-				err = reader.Load(ctx, current.Parent, &parent)
+				err = repo.Load(ctx, current.Parents[0], &parent)
 				if err != nil {
 					logrus.Error(err)
 					return
@@ -110,7 +106,7 @@ var logCmd = &cobra.Command{
 					return
 				}
 			}
-			currentID = current.Parent
+			currentID = current.Parents[0]
 		}
 	},
 }

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/marstr/envelopes/persist/json"
 	"io"
 	"math/big"
 	"os"
@@ -170,30 +171,18 @@ var commitCmd = &cobra.Command{
 			}
 		}
 
-		persister := persist.FileSystem{
-			Root: filepath.Join(targetDir, index.RepoName),
-		}
-
-		writer := persist.DefaultWriter{
-			Stasher: persister,
-		}
-
-		loader := persist.DefaultLoader{
-			Fetcher: persister,
-		}
-		
-		resolver := persist.RefSpecResolver{
-			Loader:        loader,
-			Brancher:      persister,
-			CurrentReader: persister,
-		}
-
-		head, err := persister.Current(ctx)
+		var repo persist.RepositoryReaderWriter
+		repo, err = json.NewFileSystemRepository(filepath.Join(targetDir, index.RepoName))
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		parent, err := resolver.Resolve(ctx, head)
+		head, err := repo.Current(ctx)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		parent, err := persist.Resolve(ctx, repo, head)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -202,7 +191,7 @@ var commitCmd = &cobra.Command{
 			Amount:   amount,
 			Merchant: commitConfig.GetString(merchantFlag),
 			Comment:  commitConfig.GetString(commentFlag),
-			RecordId: envelopes.BankRecordID(commitConfig.GetString(bankRecordIdFlag)),
+			RecordID: envelopes.BankRecordID(commitConfig.GetString(bankRecordIdFlag)),
 			State: &envelopes.State{
 				Accounts: accounts,
 				Budget:   budget,
@@ -210,15 +199,30 @@ var commitCmd = &cobra.Command{
 			ActualTime: commitConfig.GetTime(actualTimeFlag),
 			PostedTime:   commitConfig.GetTime(postedTimeFlag),
 			EnteredTime: time.Now(),
-			Parent: parent,
+			Parents: []envelopes.ID{parent},
 		}
+		currentId := currentTransaction.ID()
 
-		err = writer.Write(ctx, currentTransaction)
+		err = repo.Write(ctx, currentTransaction)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		err = persister.WriteCurrent(ctx, currentTransaction)
+		var currentRef persist.RefSpec
+		currentRef, err = repo.Current(ctx)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		_, err = repo.ReadBranch(ctx, string(currentRef))
+		if err == nil {
+			err = repo.WriteBranch(ctx, string(currentRef), currentId)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+		} else if persist.ErrNoRefSpec()
+
+		err = repo.WriteCurrent(ctx, currentTransaction)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -348,32 +352,21 @@ func findDefaultAmount(ctx context.Context, targetDir string) (envelopes.Balance
 		Budget:   budget,
 	}
 
-	persister := persist.FileSystem{
-		Root: filepath.Join(targetDir, index.RepoName),
-	}
+	var repo persist.RepositoryReader
+	repo, err = json.NewFileSystemRepository(filepath.Join(targetDir, index.RepoName))
 
-	current, err := persister.Current(ctx)
+	current, err := repo.Current(ctx)
 	if err != nil {
 		return envelopes.Balance{}, err
 	}
 
-	loader := persist.DefaultLoader{
-		Fetcher: persister,
-	}
-
-	resolver := persist.RefSpecResolver{
-		Loader:        loader,
-		Brancher:      persister,
-		CurrentReader: persister,
-	}
-
-	id, err := resolver.Resolve(ctx, current)
+	id, err := persist.Resolve(ctx, repo, current)
 	if err != nil {
 		return envelopes.Balance{}, err
 	}
 
 	var head envelopes.Transaction
-	err = loader.Load(ctx, id, &head)
+	err = repo.Load(ctx, id, &head)
 	if err != nil {
 		return envelopes.Balance{}, err
 	}

@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/marstr/envelopes/persist/json"
 	"os"
 	"path/filepath"
 
@@ -69,16 +70,19 @@ var initCmd = &cobra.Command{
 			}
 		}
 
-		persister := persist.FileSystem{
-			Root: index.RepoName,
-		}
-
-		err := persister.WriteBranch(ctx, initialBranch, envelopes.ID{})
+		var repo persist.RepositoryReaderWriter
+		var err error
+		repo, err = json.NewFileSystemRepository(index.RepoName)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		err = persister.SetCurrent(ctx, initialBranch)
+		err = repo.WriteBranch(ctx, initialBranch, envelopes.ID{})
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		err = repo.SetCurrent(ctx, initialBranch)
 		if err != nil {
 			logrus.Fatal(err)
 		}

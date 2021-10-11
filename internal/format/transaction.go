@@ -60,8 +60,8 @@ func ConcisePrintTransaction(_ context.Context, output io.Writer, subject envelo
 	if err != nil {
 		return
 	}
-	if subject.RecordId != "" {
-		_, err = fmt.Fprintf(output, "\tBank Record ID:\t%s\n", subject.RecordId)
+	if subject.RecordID != "" {
+		_, err = fmt.Fprintf(output, "\tBank Record ID:\t%s\n", subject.RecordID)
 		if err != nil {
 			return err
 		}
@@ -84,11 +84,11 @@ func PrettyPrintTransaction(
 	var err error
 	var impacts envelopes.Impact
 
-	if subject.Parent.Equal(envelopes.ID{}) {
+	if subject.Parents[0].Equal(envelopes.ID{}) {
 		impacts = envelopes.Impact(*subject.State)
 	} else {
 		var parent envelopes.Transaction
-		err := loader.Load(ctx, subject.Parent, &parent)
+		err := loader.Load(ctx, subject.Parents[0], &parent)
 		if err != nil {
 			return err
 		}
@@ -117,8 +117,8 @@ func PrettyPrintTransaction(
 	if err != nil {
 		return err
 	}
-	if subject.RecordId != "" {
-		_, err = fmt.Fprintf(output, "Bank Record ID:\t%s\n", subject.RecordId)
+	if subject.RecordID != "" {
+		_, err = fmt.Fprintf(output, "Bank Record ID:\t%s\n", subject.RecordID)
 		if err != nil {
 			return err
 		}
@@ -127,7 +127,7 @@ func PrettyPrintTransaction(
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(output, "Parent:  \t%s\n", subject.Parent)
+	_, err = fmt.Fprintf(output, "Parent:  \t%s\n", subject.Parents[0])
 	if err != nil {
 		return err
 	}
