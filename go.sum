@@ -18,13 +18,12 @@ github.com/magiconair/properties v1.8.0 h1:LLgXmsheXeRoUOBOjtwPQCWIYqM/LU1ayDtDe
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/marstr/collection v1.1.1 h1:NJgrWXrjYWkrAr/bAp6LVCT+NvrZpE8URGFy7R7CBIA=
 github.com/marstr/collection v1.1.1/go.mod h1:yGFnCtb7iWtkdragXuuvnQzBQ8DAu+awhmE7F4kRgaQ=
-github.com/marstr/envelopes v0.2.4 h1:49yL/tB4/+Xkz78MRsCO1IsZciPkrrNqV9ZyCGgiwoI=
-github.com/marstr/envelopes v0.2.4/go.mod h1:oGPRhVzOhygr7Zfmjw6sLVb22K3yPm/TWuuF3u8QVf8=
+github.com/marstr/envelopes v0.4.0 h1:KmeD02hqQ+49tiV5nIJDEo61eoHJKL9Up0NRxES7Rro=
+github.com/marstr/envelopes v0.4.0/go.mod h1:EQOwsSRBbGf+0/1PykFWpAlp63I6fen9yR4/EtXGjPY=
 github.com/marstr/units v1.0.1 h1:J1oBku8rInztZY9IO0W2fS1bZ60UotlmBLbyvyZLoSU=
 github.com/marstr/units v1.0.1/go.mod h1:B1/IxDKETT7FwLuU0ZOvdPePP9chjt0PLTt+qeVARJ8=
-github.com/mitchellh/go-homedir v0.0.0-20161203194507-b8bc1bf76747/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
-github.com/mitchellh/go-homedir v1.0.0 h1:vKb8ShqSby24Yrqr/yDYkuFz8d0WUjys40rvnGC8aR0=
-github.com/mitchellh/go-homedir v1.0.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
+github.com/mitchellh/go-homedir v1.1.0 h1:lukF9ziXFxDFPkA1vsr5zpc1XuPDn/wFntq5mG+4E0Y=
+github.com/mitchellh/go-homedir v1.1.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
 github.com/mitchellh/mapstructure v1.1.2 h1:fmNYVwqnSfB9mZU6OS2O6GsXM+wcskZDuKQzvN1EDeE=
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=

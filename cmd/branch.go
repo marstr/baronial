@@ -20,13 +20,14 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/marstr/envelopes"
 	"io"
 	"os"
 	"path"
 	"time"
 
+	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
+	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -39,18 +40,24 @@ var branchCmd = &cobra.Command{
 	Short: "Creates a branch with a given name.",
 	Args: cobra.MaximumNArgs(1),
 	Run: func(_ *cobra.Command, args []string) {
+		var err error
 		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 		defer cancel()
 
-		indexRootDir, err  := index.RootDirectory(".")
+		var indexRootDir string
+		indexRootDir, err = index.RootDirectory(".")
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		repoDir := path.Join(indexRootDir, index.RepoName)
-		fs := &persist.FileSystem{Root: repoDir}
+		var repo persist.RepositoryReaderWriter
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(indexRootDir, index.RepoName), 10000)
+		if err != nil {
+			logrus.Fatal(err)
+		}
 
-		head, err := fs.Current(ctx)
+		var head persist.RefSpec
+		head, err = repo.Current(ctx)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -58,24 +65,18 @@ var branchCmd = &cobra.Command{
 		if len(args) > 0 {
 			branchName := args[0]
 
-			resolver := persist.RefSpecResolver{
-				Loader:   persist.DefaultLoader{Fetcher: fs},
-				Brancher: fs,
-				CurrentReader: fs,
-			}
-
 			var target envelopes.ID
-			target, err = resolver.Resolve(ctx, head)
+			target, err = persist.Resolve(ctx, repo, head)
 			if err != nil {
 				logrus.Fatal(err)
 			}
 
-			err = fs.WriteBranch(ctx, branchName, target)
+			err = repo.WriteBranch(ctx, branchName, target)
 			if err != nil {
 				logrus.Fatal(err)
 			}
 		} else {
-			err = printBranchList(ctx, os.Stdout, fs, head)
+			err = printBranchList(ctx, os.Stdout, repo, head)
 			if err != nil {
 				logrus.Fatal(err)
 			}

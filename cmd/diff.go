@@ -25,6 +25,7 @@ import (
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
+	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -35,7 +36,7 @@ import (
 type diffCmd struct {
 	cobra.Command
 	Context context.Context
-	Resolver persist.RefSpecResolver
+	Repo persist.RepositoryReader
 }
 
 func init() {
@@ -71,7 +72,7 @@ func (dc diffCmd) processArgs(cmd *cobra.Command, arg []string) error {
 	}
 
 	for _, rs := range arg {
-		id, err := dc.Resolver.Resolve(dc.Context, persist.RefSpec(rs))
+		id, err := persist.Resolve(dc.Context, dc.Repo, persist.RefSpec(rs))
 		if err != nil || id.Equal(envelopes.ID{}){
 			return fmt.Errorf("%q is not a valid refspec", rs)
 		}
@@ -111,24 +112,21 @@ func (dc diffCmd) run(cmd *cobra.Command, args []string) {
 func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envelopes.State, *envelopes.State, error) {
 	var err error
 	var left, right *envelopes.State
-	fs := persist.FileSystem{Root: path.Join(indexRoot, index.RepoName)}
-	loader := persist.DefaultLoader{
-		Fetcher: fs,
-	}
-	resolver := persist.RefSpecResolver{
-		Loader:   loader,
-		Brancher: fs,
-		CurrentReader: fs,
+	var repo persist.RepositoryReader
+
+	repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(indexRoot, index.RepoName), 10000)
+	if err != nil {
+		logrus.Fatal(err)
 	}
 
 	loadFromRepository := func(ctx context.Context, rs persist.RefSpec) (*envelopes.State, error) {
 		var targetID envelopes.ID
-		targetID, err = resolver.Resolve(ctx, rs)
+		targetID, err = persist.Resolve(ctx, repo, rs)
 		if err != nil {
 			return nil, err
 		}
 		var target envelopes.Transaction
-		err = loader.Load(ctx, targetID, &target)
+		err = repo.Load(ctx, targetID, &target)
 		if err != nil {
 			return nil, err
 		}

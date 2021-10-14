@@ -22,6 +22,7 @@ import (
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
+	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -69,16 +70,19 @@ var initCmd = &cobra.Command{
 			}
 		}
 
-		persister := persist.FileSystem{
-			Root: index.RepoName,
-		}
-
-		err := persister.WriteBranch(ctx, initialBranch, envelopes.ID{})
+		var repo persist.RepositoryReaderWriter
+		var err error
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, index.RepoName, 10000)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		err = persister.SetCurrent(ctx, initialBranch)
+		err = repo.WriteBranch(ctx, initialBranch, envelopes.ID{})
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		err = repo.SetCurrent(ctx, initialBranch)
 		if err != nil {
 			logrus.Fatal(err)
 		}

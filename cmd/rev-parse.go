@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/marstr/envelopes/persist"
+	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -41,14 +42,13 @@ var revParseCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		fs := &persist.FileSystem{Root: path.Join(root, index.RepoName)}
-		resolver := persist.RefSpecResolver{
-			Loader: persist.DefaultLoader{Fetcher: fs},
-			Brancher: fs,
-			CurrentReader: fs,
+		var repo persist.RepositoryReader
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(root, index.RepoName), 10000)
+		if err != nil {
+			logrus.Fatal(err)
 		}
 
-		id, err := resolver.Resolve(ctx, persist.RefSpec(args[0]))
+		id, err := persist.Resolve(ctx, repo, persist.RefSpec(args[0]))
 		if err != nil {
 			logrus.Fatal(err)
 		}

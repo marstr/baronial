@@ -25,6 +25,7 @@ import (
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
+	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -51,66 +52,48 @@ var logCmd = &cobra.Command{
 			return
 		}
 
-		persister := persist.FileSystem{Root: filepath.Join(root, index.RepoName)}
-		reader := persist.DefaultLoader{
-			Fetcher: persister,
+		var repo persist.RepositoryReader
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, filepath.Join(root, index.RepoName), 10000)
+		if err != nil {
+			logrus.Fatal(err)
 		}
 
-		currentRef, err := persister.Current(ctx)
+		currentRef, err := repo.Current(ctx)
 		if err != nil {
 			logrus.Error(err)
 			return
 		}
 
-		resolver := persist.RefSpecResolver{
-			Loader:        reader,
-			Brancher:      persister,
-			CurrentReader: persister,
-		}
-
-		currentID, err := resolver.Resolve(ctx, currentRef)
+		currentID, err := persist.Resolve(ctx, repo, currentRef)
 		if err != nil {
 			logrus.Error(err)
 			return
 		}
 
-		for !isEmptyID(currentID) {
-			// TODO: refactor so that if parent was already loaded below, current re-uses that pre-loaded instance.
-			var current envelopes.Transaction
-			err = reader.Load(ctx, currentID, &current)
+		walker := persist.Walker{Loader: repo}
+		err = walker.Walk(ctx, func(ctx context.Context, id envelopes.ID, transaction envelopes.Transaction) error {
+			impact, err := persist.LoadImpact(ctx, repo, transaction)
 			if err != nil {
-				logrus.Error(err)
-				return
+				return err
 			}
 
-			var diff envelopes.Impact
-
-			if isEmptyID(current.Parent) {
-				diff = envelopes.Impact(*current.State)
-			} else {
-				var parent envelopes.Transaction
-				err = reader.Load(ctx, current.Parent, &parent)
-				if err != nil {
-					logrus.Error(err)
-					return
-				}
-
-				diff = current.State.Subtract(*parent.State)
-			}
-
-			if len(args) == 0 || containsEntity(diff, args...) {
-				err = format.ConcisePrintTransaction(ctx, cmd.OutOrStdout(), current)
+			if len(args) == 0 || containsEntity(impact, args...) {
+				err = format.ConcisePrintTransaction(ctx, cmd.OutOrStdout(), transaction)
 				if err != nil {
 					if cast, ok := err.(*os.PathError); ok {
 						if cast.Path == "|1" {
-							return
+							return nil
 						}
 					}
-					logrus.Error(err)
-					return
+					return err
 				}
 			}
-			currentID = current.Parent
+			return nil
+		}, currentID)
+
+		if err != nil {
+			logrus.Error(err)
+			return
 		}
 	},
 }
