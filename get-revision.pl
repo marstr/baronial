@@ -18,7 +18,7 @@ use warnings;
 my $revision = `git rev-parse HEAD`;
 $revision =~ s/\s+$//;
 
-if(`git status --short` ne ""){
+if(`git status --short | grep -v [Dd]ocker` ne ""){
     $revision = $revision . "-modified";
 }
 
