@@ -35,7 +35,7 @@ fedora35: bin/linux/baronial.fc35.src.rpm bin/linux/baronial.fc35.x86_64.rpm bin
 el8: bin/linux/baronial.el8.src.rpm bin/linux/baronial.el8.x86_64.rpm bin/docker/baronial-el8.tar.gz
 
 .PHONY: opensuse
-opensuse: bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/docker/baronial-opensuse_leap151.tar.gz
+opensuse: bin/linux/baronial.lp153.src.rpm bin/linux/baronial.lp153.x86_64.rpm bin/docker/baronial-opensuse_leap153.tar.gz
 
 .PHONY: alpine
 alpine: bin/docker/baronial-alpine.tar.gz
@@ -137,19 +137,19 @@ bin/linux/baronial.el8.x86_64.rpm: bin/docker/baronial-el8.tar.gz version.txt
 	mkdir -p bin/linux
 	${DOCKER} run --rm marstr/baronial:el8-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.el8.x86_64.rpm > bin/linux/baronial.el8.x86_64.rpm
 
-bin/docker/baronial-opensuse_leap151.tar.gz: ${SRC} Dockerfile.opensuse_leap
+bin/docker/baronial-opensuse_leap153.tar.gz: ${SRC} Dockerfile.opensuse_leap
 	mkdir -p bin/docker
-	${DOCKER} build --build-arg tag=15.1 -t marstr/baronial:leap151-rpm-builder -f Dockerfile.opensuse_leap --target rpm-builder .
-	${DOCKER} build --build-arg tag=15.1 -t marstr/baronial:leap151 -f Dockerfile.opensuse_leap --target rpm-builder .
-	${DOCKER} save marstr/baronial:leap151 | gzip > bin/docker/baronial-opensuse_leap151.tar.gz
+	${DOCKER} build --build-arg tag=15.3 -t marstr/baronial:leap153-rpm-builder -f Dockerfile.opensuse_leap --target rpm-builder .
+	${DOCKER} build --build-arg tag=15.3 -t marstr/baronial:leap153 -f Dockerfile.opensuse_leap --target rpm-builder .
+	${DOCKER} save marstr/baronial:leap153 | gzip > bin/docker/baronial-opensuse_leap153.tar.gz
 
-bin/linux/baronial.lp151.src.rpm: bin/docker/baronial-opensuse_leap151.tar.gz version.txt
+bin/linux/baronial.lp153.src.rpm: bin/docker/baronial-opensuse_leap153.tar.gz version.txt
 	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:leap151-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.lp151.src.rpm > bin/linux/baronial.lp151.src.rpm
+	${DOCKER} run --rm marstr/baronial:leap153-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.lp153.src.rpm > bin/linux/baronial.lp153.src.rpm
 
-bin/linux/baronial.lp151.x86_64.rpm: bin/docker/baronial-opensuse_leap151.tar.gz version.txt
+bin/linux/baronial.lp153.x86_64.rpm: bin/docker/baronial-opensuse_leap153.tar.gz version.txt
 	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:leap151-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.lp151.x86_64.rpm > bin/linux/baronial.lp151.x86_64.rpm
+	${DOCKER} run --rm marstr/baronial:leap153-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.lp153.x86_64.rpm > bin/linux/baronial.lp153.x86_64.rpm
 
 baronial.tar.gz: ${SRC} LICENSE version.txt revision.txt
 	bash ./archive-src.sh
