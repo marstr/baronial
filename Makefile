@@ -198,8 +198,8 @@ clean:
 	${DOCKER} rmi -f marstr/baronial:fedora34 2>/dev/null || echo 'Skipping Fedora 34 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:fedora35-rpm-builder 2>/dev/null || echo 'Skipping Fedora 35 RPM Builder Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:fedora35 2>/dev/null || echo 'Skipping Fedora 35 Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:leap151-rpm-builder 2>/dev/null || echo 'Skipping openSUSE Leap 15.1 RPM Builder Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:leap151 2>/dev/null || echo 'Skipping openSUSE Leap 15.1 Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:leap153-rpm-builder 2>/dev/null || echo 'Skipping openSUSE Leap 15.3 RPM Builder Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:leap153 2>/dev/null || echo 'Skipping openSUSE Leap 15.3 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:el8-rpm-builder 2>/dev/null || echo 'Skipping Enterprise Linux 8 RPM Build Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:el8 2>/dev/null || echo 'Skipping Enterprise Linux 8 Docker Image Delete' > /dev/null
 
