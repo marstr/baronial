@@ -17,12 +17,12 @@ package cmd
 
 import (
 	"context"
-	"github.com/marstr/envelopes/persist/json"
 	"os"
 	"path/filepath"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
+	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -72,7 +72,7 @@ var initCmd = &cobra.Command{
 
 		var repo persist.RepositoryReaderWriter
 		var err error
-		repo, err = json.NewFileSystemRepository(index.RepoName)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, index.RepoName, 10000)
 		if err != nil {
 			logrus.Fatal(err)
 		}

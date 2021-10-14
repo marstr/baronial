@@ -21,11 +21,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/marstr/envelopes/persist/json"
 	"path"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
+	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -114,7 +114,7 @@ func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envel
 	var left, right *envelopes.State
 	var repo persist.RepositoryReader
 
-	repo, err = json.NewFileSystemRepository(path.Join(indexRoot, index.RepoName))
+	repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(indexRoot, index.RepoName), 10000)
 	if err != nil {
 		logrus.Fatal(err)
 	}

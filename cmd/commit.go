@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/marstr/envelopes/persist/json"
 	"io"
 	"math/big"
 	"os"
@@ -30,6 +29,7 @@ import (
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
+	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -172,7 +172,7 @@ var commitCmd = &cobra.Command{
 		}
 
 		var repo persist.RepositoryReaderWriter
-		repo, err = json.NewFileSystemRepository(filepath.Join(targetDir, index.RepoName))
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, filepath.Join(targetDir, index.RepoName), 10000)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -199,8 +199,13 @@ var commitCmd = &cobra.Command{
 			ActualTime: commitConfig.GetTime(actualTimeFlag),
 			PostedTime:   commitConfig.GetTime(postedTimeFlag),
 			EnteredTime: time.Now(),
-			Parents: []envelopes.ID{parent},
 		}
+		if parent.Equal(envelopes.ID{}) {
+			currentTransaction.Parents = []envelopes.ID{}
+		} else {
+			currentTransaction.Parents = []envelopes.ID{parent}
+		}
+
 		currentId := currentTransaction.ID()
 
 		err = repo.Write(ctx, currentTransaction)
@@ -220,12 +225,13 @@ var commitCmd = &cobra.Command{
 			if err != nil {
 				logrus.Fatal(err)
 			}
-		} else if persist.ErrNoRefSpec()
-
-		err = repo.WriteCurrent(ctx, currentTransaction)
-		if err != nil {
-			logrus.Fatal(err)
+		} else {
+			err = repo.SetCurrent(ctx, persist.RefSpec(currentTransaction.ID().String()))
+			if err != nil {
+				logrus.Fatal(err)
+			}
 		}
+
 	},
 }
 
@@ -353,7 +359,7 @@ func findDefaultAmount(ctx context.Context, targetDir string) (envelopes.Balance
 	}
 
 	var repo persist.RepositoryReader
-	repo, err = json.NewFileSystemRepository(filepath.Join(targetDir, index.RepoName))
+	repo, err = filesystem.OpenRepositoryWithCache(ctx, filepath.Join(targetDir, index.RepoName), 10000)
 
 	current, err := repo.Current(ctx)
 	if err != nil {

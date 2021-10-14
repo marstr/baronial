@@ -17,12 +17,12 @@ package cmd
 
 import (
 	"context"
-	"github.com/marstr/envelopes/persist/json"
 	"os"
 	"path"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
+	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -48,7 +48,7 @@ for the sake of brevity. This command shows all known details of a transaction.`
 		root = path.Join(root, index.RepoName)
 
 		var repo persist.RepositoryReader
-		repo, err = json.NewFileSystemRepository(root)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, root, 10000)
 		if err != nil {
 			logrus.Fatal(err)
 		}

@@ -27,7 +27,7 @@ import (
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
-	"github.com/marstr/envelopes/persist/json"
+	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -51,7 +51,7 @@ var branchCmd = &cobra.Command{
 		}
 
 		var repo persist.RepositoryReaderWriter
-		repo, err = json.NewFileSystemRepository(path.Join(indexRootDir, index.RepoName))
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(indexRootDir, index.RepoName), 10000)
 		if err != nil {
 			logrus.Fatal(err)
 		}

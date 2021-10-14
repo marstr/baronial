@@ -19,13 +19,13 @@ package cmd
 
 import (
 	"context"
-	"github.com/marstr/envelopes/persist/json"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
+	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -53,7 +53,7 @@ var logCmd = &cobra.Command{
 		}
 
 		var repo persist.RepositoryReader
-		repo, err = json.NewFileSystemRepository(filepath.Join(root, index.RepoName))
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, filepath.Join(root, index.RepoName), 10000)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -70,43 +70,30 @@ var logCmd = &cobra.Command{
 			return
 		}
 
-		for !isEmptyID(currentID) {
-			// TODO: refactor so that if parent was already loaded below, current re-uses that pre-loaded instance.
-			var current envelopes.Transaction
-			err = repo.Load(ctx, currentID, &current)
+		walker := persist.Walker{Loader: repo}
+		err = walker.Walk(ctx, func(ctx context.Context, id envelopes.ID, transaction envelopes.Transaction) error {
+			impact, err := persist.LoadImpact(ctx, repo, transaction)
 			if err != nil {
-				logrus.Error(err)
-				return
+				return err
 			}
 
-			var diff envelopes.Impact
-
-			if len(current.Parents) == 0 {
-				diff = envelopes.Impact(*current.State)
-			} else {
-				var parent envelopes.Transaction
-				err = repo.Load(ctx, current.Parents[0], &parent)
-				if err != nil {
-					logrus.Error(err)
-					return
-				}
-
-				diff = current.State.Subtract(*parent.State)
-			}
-
-			if len(args) == 0 || containsEntity(diff, args...) {
-				err = format.ConcisePrintTransaction(ctx, cmd.OutOrStdout(), current)
+			if len(args) == 0 || containsEntity(impact, args...) {
+				err = format.ConcisePrintTransaction(ctx, cmd.OutOrStdout(), transaction)
 				if err != nil {
 					if cast, ok := err.(*os.PathError); ok {
 						if cast.Path == "|1" {
-							return
+							return nil
 						}
 					}
-					logrus.Error(err)
-					return
+					return err
 				}
 			}
-			currentID = current.Parents[0]
+			return nil
+		}, currentID)
+
+		if err != nil {
+			logrus.Error(err)
+			return
 		}
 	},
 }
