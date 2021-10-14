@@ -1,8 +1,8 @@
-ARG alpine_version=3.9
+ARG alpine_version=3.11
 
-FROM golang:alpine${alpine_version} AS builder
+FROM alpine:${alpine_version} AS builder
 
-RUN apk add --no-cache --update alpine-sdk gcc make git perl
+RUN apk add --no-cache --update alpine-sdk gcc make git perl go
 
 WORKDIR /usr/local/src/baronial
 
@@ -18,6 +18,6 @@ CMD /bin/bash
 
 FROM alpine:${alpine_version} AS execution
 
-COPY --from=builder /go/bin/baronial /usr/local/bin
+COPY --from=builder /root/go/bin/baronial /usr/local/bin
 
 CMD /bin/sh
