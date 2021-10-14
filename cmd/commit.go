@@ -80,10 +80,10 @@ const (
 )
 
 const (
-	bankRecordIdFlag = "bank-record-id"
-	bankRecordIdShorthand = "b"
-	bankRecordIdDefault = ""
-	bankRecordIdUsage = "A unique ID assigned to this transaction by a financial institution."
+	bankRecordIDFlag      = "bank-record-id"
+	bankRecordIDShorthand = "b"
+	bankRecordIDDefault = ""
+	bankRecordIDUsage   = "A unique ID assigned to this transaction by a financial institution."
 )
 
 var commitConfig = viper.New()
@@ -191,7 +191,7 @@ var commitCmd = &cobra.Command{
 			Amount:   amount,
 			Merchant: commitConfig.GetString(merchantFlag),
 			Comment:  commitConfig.GetString(commentFlag),
-			RecordID: envelopes.BankRecordID(commitConfig.GetString(bankRecordIdFlag)),
+			RecordID: envelopes.BankRecordID(commitConfig.GetString(bankRecordIDFlag)),
 			State: &envelopes.State{
 				Accounts: accounts,
 				Budget:   budget,
@@ -252,7 +252,7 @@ func init() {
 	commitCmd.PersistentFlags().StringP(postedTimeFlag, postedTimeShorthand, postedTimeDefault, postedTimeUsage)
 	commitCmd.PersistentFlags().StringP(actualTimeFlag, actualTimeShorthand, actualTimeDefault, actualTimeUsage)
 	commitCmd.PersistentFlags().StringP(amountFlag, amountShorthand, commitConfig.GetString(amountFlag), amountUsage)
-	commitCmd.PersistentFlags().StringP(bankRecordIdFlag, bankRecordIdShorthand, bankRecordIdDefault, bankRecordIdUsage)
+	commitCmd.PersistentFlags().StringP(bankRecordIDFlag, bankRecordIDShorthand, bankRecordIDDefault, bankRecordIDUsage)
 	commitCmd.PersistentFlags().BoolP(forceFlag, forceShorthand, forceDefault, forceUsage)
 
 	err := commitConfig.BindPFlags(commitCmd.PersistentFlags())

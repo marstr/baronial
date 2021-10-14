@@ -29,6 +29,8 @@ import (
 	"github.com/marstr/envelopes/persist"
 )
 
+// ConcisePrintTransaction writes an abbreviates text version of an envelopes.Transaction's details to the provided
+// io.Writer.
 func ConcisePrintTransaction(_ context.Context, output io.Writer, subject envelopes.Transaction) (err error) {
 	_, err = fmt.Fprintln(output, subject.ID())
 	if err != nil {
@@ -73,7 +75,7 @@ func ConcisePrintTransaction(_ context.Context, output io.Writer, subject envelo
 	return nil
 }
 
-// prettyPrintTransaction serializes a transaction into text in as pretty of a fashion as it can muster. It requires a
+// PrettyPrintTransaction serializes a transaction into text in as pretty of a fashion as it can muster. It requires a
 // `persist.Loader` in order to fetch any budget related information in its pursuit. Most notably, it must fetch the
 // parent of this transaction to figure out the differences to each budget/account.
 func PrettyPrintTransaction(
@@ -143,6 +145,7 @@ func PrettyPrintTransaction(
 	return PrettyPrintImpact(output, impacts)
 }
 
+// PrettyPrintImpact writes the details of an envelopes.Impact to the provided io.Writer.
 func PrettyPrintImpact(output io.Writer, impacts envelopes.Impact) (err error) {
 	_ , err = fmt.Fprintf(output, "\tAccounts:\n")
 	if err != nil {
