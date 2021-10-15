@@ -1,6 +1,7 @@
-ARG tag=stretch
+ARG tag=buster
 
-FROM golang:${tag} AS builder
+FROM debian:${tag} AS builder
+RUN apt update; apt install -y golang perl make git
 
 WORKDIR /usr/local/src/baronial
 
