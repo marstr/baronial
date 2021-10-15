@@ -1,7 +1,7 @@
-ARG tag=buster
+ARG tag=10
 
 FROM debian:${tag} AS builder
-RUN apt update; apt install -y golang perl make git
+RUN apt update; apt install -y golang perl make git debhelper
 
 WORKDIR /usr/local/src/baronial
 
@@ -11,7 +11,8 @@ RUN go mod download
 
 COPY . .
 
-RUN make bin/linux/baronial
+RUN make version.txt revision.txt
+RUN mv packaging/debian ./
 
 CMD /bin/bash
 

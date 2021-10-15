@@ -13,4 +13,4 @@ require (
 	golang.org/x/sys v0.0.0-20190419153524-e8e3143a4f4a // indirect
 )
 
-go 1.13
+go 1.11

@@ -172,7 +172,7 @@ that touched that account.
 
 ### Build from Source
 
-> NOTE: To build from source, you'll need Go 1.12 or greater, perl, and Git. See [CONTRIBUTING.md](./CONTRIBUTING.md) for
+> NOTE: To build from source, you'll need Go 1.11 or greater, perl, and Git. See [CONTRIBUTING.md](./CONTRIBUTING.md) for
 more information on setting up your machine to build Baronial. 
 
 _Unix-Based Machines:_
