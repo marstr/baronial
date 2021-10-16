@@ -1,7 +1,7 @@
 ARG tag=10
 
-FROM debian:${tag} AS builder
-RUN apt update; apt install -y golang perl make git debhelper
+FROM debian:${tag} AS source-prep
+RUN apt update; apt install -y golang perl make git debhelper debmake
 
 WORKDIR /usr/local/src/baronial
 
@@ -14,7 +14,8 @@ COPY . .
 RUN make version.txt revision.txt
 RUN mv packaging/debian ./
 
-CMD /bin/bash
+FROM source-prep as builder
+
 
 FROM debian:${tag} AS execution
 

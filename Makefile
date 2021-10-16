@@ -1,6 +1,7 @@
 # Initialize sources of potential semantic changes.
 SRC = $(shell find . -name '*.go' -type f)
 TEST_SRC = $(shell find . -name '*_test.go' -type f)
+INSTALL_LOC?=/usr/local/bin/baronial
 DOCKER?=docker
 
 # Define high-level build targets.
