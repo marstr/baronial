@@ -30,13 +30,13 @@ import (
 )
 
 var checkoutCmd = &cobra.Command{
-	Use: "checkout {refspec}",
+	Use:     "checkout {refspec}",
 	Aliases: []string{"ch"},
-	Short: "Resets the index to show the balances at a particular transaction.",
-	Args: cobra.ExactArgs(1),
+	Short:   "Resets the index to show the balances at a particular transaction.",
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
-		ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		var root string
@@ -66,9 +66,8 @@ var checkoutCmd = &cobra.Command{
 			}
 		}
 
-
 		var target envelopes.Transaction
-		err = repo.Load(ctx, targetID, &target)
+		err = repo.LoadTransaction(ctx, targetID, &target)
 		if err != nil {
 			logrus.Fatal(err)
 		}
