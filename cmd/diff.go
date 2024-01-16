@@ -36,7 +36,7 @@ import (
 type diffCmd struct {
 	cobra.Command
 	Context context.Context
-	Repo persist.RepositoryReader
+	Repo    persist.RepositoryReader
 }
 
 func init() {
@@ -55,12 +55,12 @@ func newDiffCmdWithContext(ctx context.Context) *diffCmd {
 	}
 
 	retval.Command = cobra.Command{
-		Use: "diff [refspec] [refspec]",
-		Short: "Finds the difference between two states, be they from the index or two transactions.",
-		Long: ``,
-		Args: retval.processArgs,
+		Use:     "diff [refspec] [refspec]",
+		Short:   "Finds the difference between two states, be they from the index or two transactions.",
+		Long:    ``,
+		Args:    retval.processArgs,
 		PreRunE: setPagedCobraOutput,
-		Run: retval.run,
+		Run:     retval.run,
 	}
 
 	return retval
@@ -73,7 +73,7 @@ func (dc diffCmd) processArgs(cmd *cobra.Command, arg []string) error {
 
 	for _, rs := range arg {
 		id, err := persist.Resolve(dc.Context, dc.Repo, persist.RefSpec(rs))
-		if err != nil || id.Equal(envelopes.ID{}){
+		if err != nil || id.Equal(envelopes.ID{}) {
 			return fmt.Errorf("%q is not a valid refspec", rs)
 		}
 	}
@@ -82,7 +82,7 @@ func (dc diffCmd) processArgs(cmd *cobra.Command, arg []string) error {
 
 func (dc diffCmd) run(cmd *cobra.Command, args []string) {
 	var err error
-	defer func(){
+	defer func() {
 		if err != nil {
 			logrus.Error(err)
 			return
@@ -126,7 +126,7 @@ func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envel
 			return nil, err
 		}
 		var target envelopes.Transaction
-		err = repo.Load(ctx, targetID, &target)
+		err = repo.LoadTransaction(ctx, targetID, &target)
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +142,7 @@ func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envel
 		}
 
 		left, err = index.LoadState(ctx, indexRoot)
-		if err != nil{
+		if err != nil {
 			return nil, nil, err
 		}
 	case 1: // Compare current index against specified refspec

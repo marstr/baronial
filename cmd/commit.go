@@ -66,10 +66,10 @@ const (
 )
 
 const (
-	actualTimeFlag = "actual-time"
+	actualTimeFlag      = "actual-time"
 	actualTimeShorthand = "t"
-	actualTimeDefault = "<empty>"
-	actualTimeUsage = "The time and date when this transaction occurred."
+	actualTimeDefault   = "<empty>"
+	actualTimeUsage     = "The time and date when this transaction occurred."
 )
 
 const (
@@ -82,8 +82,8 @@ const (
 const (
 	bankRecordIDFlag      = "bank-record-id"
 	bankRecordIDShorthand = "b"
-	bankRecordIDDefault = ""
-	bankRecordIDUsage   = "A unique ID assigned to this transaction by a financial institution."
+	bankRecordIDDefault   = ""
+	bankRecordIDUsage     = "A unique ID assigned to this transaction by a financial institution."
 )
 
 var commitConfig = viper.New()
@@ -196,8 +196,8 @@ var commitCmd = &cobra.Command{
 				Accounts: accounts,
 				Budget:   budget,
 			},
-			ActualTime: commitConfig.GetTime(actualTimeFlag),
-			PostedTime:   commitConfig.GetTime(postedTimeFlag),
+			ActualTime:  commitConfig.GetTime(actualTimeFlag),
+			PostedTime:  commitConfig.GetTime(postedTimeFlag),
 			EnteredTime: time.Now(),
 		}
 		if parent.Equal(envelopes.ID{}) {
@@ -208,7 +208,7 @@ var commitCmd = &cobra.Command{
 
 		currentId := currentTransaction.ID()
 
-		err = repo.Write(ctx, currentTransaction)
+		err = repo.WriteTransaction(ctx, currentTransaction)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -372,7 +372,7 @@ func findDefaultAmount(ctx context.Context, targetDir string) (envelopes.Balance
 	}
 
 	var head envelopes.Transaction
-	err = repo.Load(ctx, id, &head)
+	err = repo.LoadTransaction(ctx, id, &head)
 	if err != nil {
 		return envelopes.Balance{}, err
 	}

@@ -61,7 +61,7 @@ for the sake of brevity. This command shows all known details of a transaction.`
 		}
 
 		var target envelopes.Transaction
-		err = repo.Load(ctx, targetID, &target)
+		err = repo.LoadTransaction(ctx, targetID, &target)
 		if err != nil {
 			logrus.Fatal(err)
 		}

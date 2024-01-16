@@ -90,7 +90,7 @@ func PrettyPrintTransaction(
 		impacts = envelopes.Impact(*subject.State)
 	} else {
 		var parent envelopes.Transaction
-		err := loader.Load(ctx, subject.Parents[0], &parent)
+		err := loader.LoadTransaction(ctx, subject.Parents[0], &parent)
 		if err != nil {
 			return err
 		}
@@ -147,12 +147,12 @@ func PrettyPrintTransaction(
 
 // PrettyPrintImpact writes the details of an envelopes.Impact to the provided io.Writer.
 func PrettyPrintImpact(output io.Writer, impacts envelopes.Impact) (err error) {
-	_ , err = fmt.Fprintf(output, "\tAccounts:\n")
+	_, err = fmt.Fprintf(output, "\tAccounts:\n")
 	if err != nil {
 		return
 	}
 	for acc, delta := range impacts.Accounts {
-		_ , err = fmt.Fprintf(output, "\t\t%s: %s\n", acc, delta)
+		_, err = fmt.Fprintf(output, "\t\t%s: %s\n", acc, delta)
 		if err != nil {
 			return
 		}
@@ -166,9 +166,9 @@ func PrettyPrintImpact(output io.Writer, impacts envelopes.Impact) (err error) {
 	}
 	sort.Strings(sortedBudgetNames)
 
-	_ , err = fmt.Fprintf(output, "\tBudgets:\n")
+	_, err = fmt.Fprintf(output, "\tBudgets:\n")
 	for _, name := range sortedBudgetNames {
-		_ , err = fmt.Fprintf(output, "\t\t%s: %s\n", name, flattened[name])
+		_, err = fmt.Fprintf(output, "\t\t%s: %s\n", name, flattened[name])
 		if err != nil {
 			return
 		}
