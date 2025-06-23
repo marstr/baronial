@@ -177,16 +177,6 @@ var commitCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		head, err := repo.Current(ctx)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		parent, err := persist.Resolve(ctx, repo, head)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
 		currentTransaction := envelopes.Transaction{
 			Amount:   amount,
 			Merchant: commitConfig.GetString(merchantFlag),
@@ -200,38 +190,11 @@ var commitCmd = &cobra.Command{
 			PostedTime:  commitConfig.GetTime(postedTimeFlag),
 			EnteredTime: time.Now(),
 		}
-		if parent.Equal(envelopes.ID{}) {
-			currentTransaction.Parents = []envelopes.ID{}
-		} else {
-			currentTransaction.Parents = []envelopes.ID{parent}
-		}
 
-		currentId := currentTransaction.ID()
-
-		err = repo.WriteTransaction(ctx, currentTransaction)
+		err = persist.Commit(ctx, repo, currentTransaction)
 		if err != nil {
 			logrus.Fatal(err)
 		}
-
-		var currentRef persist.RefSpec
-		currentRef, err = repo.Current(ctx)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		_, err = repo.ReadBranch(ctx, string(currentRef))
-		if err == nil {
-			err = repo.WriteBranch(ctx, string(currentRef), currentId)
-			if err != nil {
-				logrus.Fatal(err)
-			}
-		} else {
-			err = repo.SetCurrent(ctx, persist.RefSpec(currentTransaction.ID().String()))
-			if err != nil {
-				logrus.Fatal(err)
-			}
-		}
-
 	},
 }
 
