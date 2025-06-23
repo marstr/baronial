@@ -18,7 +18,7 @@ jobs:
         run: make linux
       - name: Test
         run: make test
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: Baronial Linux
           path: bin/linux/baronial
@@ -33,7 +33,7 @@ jobs:
         run: .\make.bat
       - name: Test
         run: go test -v ./...
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: Baronial Windows
           path: bin/windows/baronial.exe
@@ -48,7 +48,7 @@ jobs:
         run: make darwin
       - name: Test
         run: make test
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: Baronial Darwin
           path: bin/darwin/baronial
@@ -62,11 +62,11 @@ jobs:
         - name: Build
           run: |
             make bin/linux/baronial.fc38.src.rpm bin/linux/baronial.fc38.x86_64.rpm
-        - uses: actions/upload-artifact@v2
+        - uses: actions/upload-artifact@v4
           with:
             name: baronial.fc38.src.rpm
             path: bin/linux/baronial.fc38.src.rpm
-        - uses: actions/upload-artifact@v2
+        - uses: actions/upload-artifact@v4
           with:
             name: baronial.fc38.x86_64.rpm
             path: bin/linux/baronial.fc38.x86_64.rpm
@@ -79,11 +79,11 @@ jobs:
       - name: Build
         run: |
           make bin/linux/baronial.fc39.src.rpm bin/linux/baronial.fc39.x86_64.rpm
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: baronial.fc39.src.rpm
           path: bin/linux/baronial.fc34.src.rpm
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: baronial.fc39.x86_64.rpm
           path: bin/linux/baronial.fc39.x86_64.rpm
