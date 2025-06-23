@@ -25,7 +25,7 @@ jobs:
       - name: Test
         run: make test
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: Baronial Linux
           path: bin/linux/baronial
@@ -42,7 +42,7 @@ jobs:
       - name: Test
         run: go test -v ./...
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: Baronial Windows
           path: bin/windows/baronial.exe
@@ -52,11 +52,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '^1.20.0'
       - name: Build
         run: make darwin
       - name: Test
         run: make test
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: Baronial Darwin
           path: bin/darwin/baronial
