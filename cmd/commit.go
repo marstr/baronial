@@ -296,7 +296,7 @@ func promptToContinue(ctx context.Context, message string, output io.Writer, inp
 }
 
 func findDefaultAmount(ctx context.Context, targetDir string) (envelopes.Balance, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
 	targetDir, err := index.RootDirectory(targetDir)
