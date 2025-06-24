@@ -17,16 +17,16 @@ darwin: bin/darwin/baronial.gz
 windows: bin/windows/baronial.exe
 
 .PHONY: docker
-docker: bin/docker/baronial-alpine.tar.gz bin/docker/baronial-debian.tar.gz bin/docker/baronial-fedora33.tar.gz bin/docker/baronial-fedora34.tar.gz bin/docker/baronial-el8.tar.gz
+docker: bin/docker/baronial-alpine.tar.gz bin/docker/baronial-debian.tar.gz bin/docker/baronial-fedora41.tar.gz bin/docker/baronial-fedora42.tar.gz bin/docker/baronial-el8.tar.gz
 
 .PHONY: fedora
-fedora: fedora38 fedora39
+fedora: fedora41 fedora42
 
-.PHONY: fedora38
-fedora38: bin/linux/baronial.fc38.src.rpm bin/linux/baronial.fc38.x86_64.rpm bin/docker/baronial-fedora38.tar.gz
+.PHONY: fedora41
+fedora41: bin/linux/baronial.fc41.src.rpm bin/linux/baronial.fc41.x86_64.rpm bin/docker/baronial-fedora41.tar.gz
 
-.PHONY: fedora39
-fedora39: bin/linux/baronial.fc39.src.rpm bin/linux/baronial.fc39.x86_64.rpm bin/docker/baronial-fedora39.tar.gz
+.PHONY: fedora42
+fedora42: bin/linux/baronial.fc42.src.rpm bin/linux/baronial.fc42.x86_64.rpm bin/docker/baronial-fedora42.tar.gz
 
 .PHONY: el8
 el8: bin/linux/baronial.el8.src.rpm bin/linux/baronial.el8.x86_64.rpm bin/docker/baronial-el8.tar.gz
@@ -38,7 +38,7 @@ opensuse: bin/linux/baronial.lp153.src.rpm bin/linux/baronial.lp153.x86_64.rpm b
 alpine: bin/docker/baronial-alpine.tar.gz
 
 .PHONY: rpm
-rpm: bin/linux/baronial.fc38.src.rpm bin/linux/baronial.fc39.x86_64.rpm bin/linux/baronial.fc38.src.rpm bin/linux/baronial.fc39.x86_64.rpm bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/linux/baronial.el8.x86_64.rpm bin/linux/baronial.el8.src.rpm
+rpm: bin/linux/baronial.fc41.src.rpm bin/linux/baronial.fc42.x86_64.rpm bin/linux/baronial.fc41.src.rpm bin/linux/baronial.fc42.x86_64.rpm bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/linux/baronial.el8.x86_64.rpm bin/linux/baronial.el8.src.rpm
 
 version.txt: ${SRC} go.sum
 	perl ./get-version.pl > version.txt
@@ -78,33 +78,33 @@ bin/docker/baronial-debian.tar.gz: ${SRC} Dockerfile.debian
 	${DOCKER} build -t marstr/baronial:debian -f Dockerfile.debian .
 	${DOCKER} save marstr/baronial:debian | gzip > bin/docker/baronial-debian.tar.gz
 
-bin/docker/baronial-fedora38.tar.gz: ${SRC} Dockerfile.fedora
+bin/docker/baronial-fedora41.tar.gz: ${SRC} Dockerfile.fedora
 	mkdir -p bin/docker
-	${DOCKER} build --build-arg tag=38 -t marstr/baronial:fedora38-rpm-builder -f Dockerfile.fedora --target rpm-builder .
-	${DOCKER} build --build-arg tag=38 -t marstr/baronial:fedora38 -f Dockerfile.fedora .
-	${DOCKER} save marstr/baronial:fedora38 | gzip > bin/docker/baronial-fedora38.tar.gz
+	${DOCKER} build --build-arg tag=41 -t marstr/baronial:fedora41-rpm-builder -f Dockerfile.fedora --target rpm-builder .
+	${DOCKER} build --build-arg tag=41 -t marstr/baronial:fedora41 -f Dockerfile.fedora .
+	${DOCKER} save marstr/baronial:fedora41 | gzip > bin/docker/baronial-fedora41.tar.gz
 
-bin/linux/baronial.fc38.src.rpm: bin/docker/baronial-fedora38.tar.gz version.txt
+bin/linux/baronial.fc41.src.rpm: bin/docker/baronial-fedora41.tar.gz version.txt
 	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:fedora38-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc38.src.rpm > bin/linux/baronial.fc38.src.rpm
+	${DOCKER} run --rm marstr/baronial:fedora41-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc41.src.rpm > bin/linux/baronial.fc41.src.rpm
 
-bin/linux/baronial.fc38.x86_64.rpm: bin/docker/baronial-fedora38.tar.gz version.txt
+bin/linux/baronial.fc41.x86_64.rpm: bin/docker/baronial-fedora41.tar.gz version.txt
 	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:fedora38-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc38.x86_64.rpm > bin/linux/baronial.fc38.x86_64.rpm
+	${DOCKER} run --rm marstr/baronial:fedora41-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc41.x86_64.rpm > bin/linux/baronial.fc41.x86_64.rpm
 
-bin/docker/baronial-fedora39.tar.gz: ${SRC} Dockerfile.fedora
+bin/docker/baronial-fedora42.tar.gz: ${SRC} Dockerfile.fedora
 	mkdir -p bin/docker
-	${DOCKER} build --build-arg tag=39 -t marstr/baronial:fedora39-rpm-builder -f Dockerfile.fedora --target rpm-builder .
-	${DOCKER} build --build-arg tag=39 -t marstr/baronial:fedora39 -f Dockerfile.fedora .
-	${DOCKER} save marstr/baronial:fedora39 | gzip > bin/docker/baronial-fedora39.tar.gz
+	${DOCKER} build --build-arg tag=42 -t marstr/baronial:fedora42-rpm-builder -f Dockerfile.fedora --target rpm-builder .
+	${DOCKER} build --build-arg tag=42 -t marstr/baronial:fedora42 -f Dockerfile.fedora .
+	${DOCKER} save marstr/baronial:fedora42 | gzip > bin/docker/baronial-fedora42.tar.gz
 
-bin/linux/baronial.fc39.src.rpm: bin/docker/baronial-fedora39.tar.gz version.txt
+bin/linux/baronial.fc42.src.rpm: bin/docker/baronial-fedora42tar.gz version.txt
 	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:fedora39-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc39.src.rpm > bin/linux/baronial.fc39.src.rpm
+	${DOCKER} run --rm marstr/baronial:fedora42-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc42.src.rpm > bin/linux/baronial.fc42.src.rpm
 
-bin/linux/baronial.fc39.x86_64.rpm: bin/docker/baronial-fedora39.tar.gz version.txt
+bin/linux/baronial.fc42.x86_64.rpm: bin/docker/baronial-fedora42.tar.gz version.txt
 	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:fedora39-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc39.x86_64.rpm > bin/linux/baronial.fc39.x86_64.rpm
+	${DOCKER} run --rm marstr/baronial:fedora42-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc42.x86_64.rpm > bin/linux/baronial.fc42.x86_64.rpm
 
 bin/docker/baronial-el8.tar.gz: ${SRC} Dockerfile.rhel
 	mkdir -p bin/docker
@@ -175,12 +175,10 @@ clean:
 	rm -rf .semaphores
 	${DOCKER} rmi -f marstr/baronial:debian 2>/dev/null || echo 'Skipping Debian Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:alpine 2>/dev/null || echo 'Skipping Alpine Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora33-rpm-builder 2>/dev/null || echo 'Skipping Fedora 33 RPM Builder Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora33 2>/dev/null || echo 'Skipping Fedora 33 Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora34-rpm-builder 2>/dev/null || echo 'Skipping Fedora 34 RPM Builder Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora34 2>/dev/null || echo 'Skipping Fedora 34 Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora35-rpm-builder 2>/dev/null || echo 'Skipping Fedora 35 RPM Builder Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora35 2>/dev/null || echo 'Skipping Fedora 35 Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora41-rpm-builder 2>/dev/null || echo 'Skipping Fedora 41 RPM Builder Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora41 2>/dev/null || echo 'Skipping Fedora 41 Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora42-rpm-builder 2>/dev/null || echo 'Skipping Fedora 42 RPM Builder Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora42 2>/dev/null || echo 'Skipping Fedora 42 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:leap153-rpm-builder 2>/dev/null || echo 'Skipping openSUSE Leap 15.3 RPM Builder Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:leap153 2>/dev/null || echo 'Skipping openSUSE Leap 15.3 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:el8-rpm-builder 2>/dev/null || echo 'Skipping Enterprise Linux 8 RPM Build Docker Image Delete' > /dev/stderr

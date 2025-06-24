@@ -56,7 +56,7 @@ jobs:
           name: Baronial Darwin
           path: bin/darwin/baronial
 
-  build-fedora38:
+  build-fedora41:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v2
@@ -64,16 +64,16 @@ jobs:
             fetch-depth: 0
         - name: Build
           run: |
-            make bin/linux/baronial.fc38.src.rpm bin/linux/baronial.fc38.x86_64.rpm
+            make bin/linux/baronial.fc41.src.rpm bin/linux/baronial.fc41.x86_64.rpm
         - uses: actions/upload-artifact@v4
           with:
-            name: baronial.fc38.src.rpm
-            path: bin/linux/baronial.fc38.src.rpm
+            name: baronial.fc41.src.rpm
+            path: bin/linux/baronial.fc41.src.rpm
         - uses: actions/upload-artifact@v4
           with:
-            name: baronial.fc38.x86_64.rpm
-            path: bin/linux/baronial.fc38.x86_64.rpm
-  build-fedora34:
+            name: baronial.fc41.x86_64.rpm
+            path: bin/linux/baronial.fc41.x86_64.rpm
+  build-fedora42:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -81,12 +81,12 @@ jobs:
           fetch-depth: 0
       - name: Build
         run: |
-          make bin/linux/baronial.fc39.src.rpm bin/linux/baronial.fc39.x86_64.rpm
+          make bin/linux/baronial.fc42.src.rpm bin/linux/baronial.fc42.x86_64.rpm
       - uses: actions/upload-artifact@v4
         with:
-          name: baronial.fc39.src.rpm
-          path: bin/linux/baronial.fc34.src.rpm
+          name: baronial.fc42.src.rpm
+          path: bin/linux/baronial.fc42.src.rpm
       - uses: actions/upload-artifact@v4
         with:
-          name: baronial.fc39.x86_64.rpm
-          path: bin/linux/baronial.fc39.x86_64.rpm
+          name: baronial.fc42.x86_64.rpm
+          path: bin/linux/baronial.fc42.x86_64.rpm
