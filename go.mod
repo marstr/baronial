@@ -1,7 +1,7 @@
 module github.com/marstr/baronial
 
 require (
-	github.com/marstr/envelopes v0.5.1-0.20250623061507-d4b2112897cd
+	github.com/marstr/envelopes v0.5.1-0.20250624063257-aa854ad9bba0
 	github.com/marstr/units v1.0.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/sirupsen/logrus v1.2.0
