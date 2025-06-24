@@ -98,7 +98,7 @@ bin/docker/baronial-fedora42.tar.gz: ${SRC} Dockerfile.fedora
 	${DOCKER} build --build-arg tag=42 -t marstr/baronial:fedora42 -f Dockerfile.fedora .
 	${DOCKER} save marstr/baronial:fedora42 | gzip > bin/docker/baronial-fedora42.tar.gz
 
-bin/linux/baronial.fc42.src.rpm: bin/docker/baronial-fedora42tar.gz version.txt
+bin/linux/baronial.fc42.src.rpm: bin/docker/baronial-fedora42.tar.gz version.txt
 	mkdir -p bin/linux
 	${DOCKER} run --rm marstr/baronial:fedora42-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc42.src.rpm > bin/linux/baronial.fc42.src.rpm
 
