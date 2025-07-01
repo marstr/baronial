@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"context"
+	"os"
 	"path"
 	"time"
 
@@ -74,13 +75,42 @@ identical to the original.`,
 			logrus.Fatal(err)
 		}
 
-		reverted := envelopes.Transaction{
-			EnteredTime: time.Now(),
-			Reverts:     id,
+		var delta envelopes.Impact
+		delta, err = persist.LoadImpact(ctx, repo, toRevert)
+		if err != nil {
+			logrus.Fatal(err)
 		}
 
-		persist.Commit(ctx, repo, reverted)
+		var headID envelopes.ID
+		headID, err = persist.Resolve(ctx, repo, persist.MostRecentTransactionAlias)
+		if err != nil {
+			logrus.Fatal(err)
+		}
 
+		var head envelopes.Transaction
+		err = repo.LoadTransaction(ctx, headID, &head)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		updated := envelopes.State(head.State.Add(envelopes.State(delta.Negate())))
+
+		reverted := envelopes.Transaction{
+			EnteredTime: time.Now(),
+			Amount:      envelopes.CalculateAmount(*head.State, updated),
+			Reverts:     id,
+			State:       &updated,
+		}
+
+		err = persist.Commit(ctx, repo, reverted)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		err = index.CheckoutState(ctx, &updated, root, os.ModePerm)
+		if err != nil {
+			logrus.Fatal(err)
+		}
 	},
 }
 

@@ -18,8 +18,8 @@ github.com/magiconair/properties v1.8.0 h1:LLgXmsheXeRoUOBOjtwPQCWIYqM/LU1ayDtDe
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/marstr/collection/v2 v2.0.0-preview1 h1:uGQOw5nm/kRF00dqIOCXfNOUsioiSHN1VPnLU8emen8=
 github.com/marstr/collection/v2 v2.0.0-preview1/go.mod h1:53MC3XxVQ/rUxiNS4bZTvx5QJSWNgZMqPFMJomGKob4=
-github.com/marstr/envelopes v0.5.1-0.20250629064537-7f414450ae45 h1:ZJOrHQ9x+Ju0P6TkTrGCdNYJ9AgkETCikxrpEtbcTyQ=
-github.com/marstr/envelopes v0.5.1-0.20250629064537-7f414450ae45/go.mod h1:uLRCVLFyjZPVfWMF48zisetTalGIt+I0Sm+ui6rZmB0=
+github.com/marstr/envelopes v0.5.1-0.20250701055825-eb4a5f26e391 h1:U5CiCYKeuEN1E1uXwoibD2msMk3R9c/Vl6g1tjNz2Uc=
+github.com/marstr/envelopes v0.5.1-0.20250701055825-eb4a5f26e391/go.mod h1:uLRCVLFyjZPVfWMF48zisetTalGIt+I0Sm+ui6rZmB0=
 github.com/marstr/units v1.0.1 h1:J1oBku8rInztZY9IO0W2fS1bZ60UotlmBLbyvyZLoSU=
 github.com/marstr/units v1.0.1/go.mod h1:B1/IxDKETT7FwLuU0ZOvdPePP9chjt0PLTt+qeVARJ8=
 github.com/mitchellh/go-homedir v1.1.0 h1:lukF9ziXFxDFPkA1vsr5zpc1XuPDn/wFntq5mG+4E0Y=
