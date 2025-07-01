@@ -9,3 +9,4 @@ baronial*.tar.gz
 
 # System specific filesystem junk
 .DS_Store
+.vscode/
