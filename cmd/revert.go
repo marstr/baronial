@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 	"time"
@@ -95,22 +96,12 @@ identical to the original.`,
 
 		updated := envelopes.State(head.State.Add(envelopes.State(delta.Negate())))
 
-		reverted := envelopes.Transaction{
-			EnteredTime: time.Now(),
-			Amount:      envelopes.CalculateAmount(*head.State, updated),
-			Reverts:     id,
-			State:       &updated,
-		}
-
-		err = persist.Commit(ctx, repo, reverted)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
 		err = index.CheckoutState(ctx, &updated, root, os.ModePerm)
 		if err != nil {
 			logrus.Fatal(err)
 		}
+
+		fmt.Printf("Undid the effects of transaction %s. Please check current balances for accuracy, make any necessary edits, then commit.", id)
 	},
 }
 
