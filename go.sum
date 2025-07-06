@@ -16,10 +16,10 @@ github.com/konsorten/go-windows-terminal-sequences v1.0.1 h1:mweAR1A6xJ3oS2pRaGi
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/magiconair/properties v1.8.0 h1:LLgXmsheXeRoUOBOjtwPQCWIYqM/LU1ayDtDePerRcY=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
-github.com/marstr/collection/v2 v2.0.0-preview1 h1:uGQOw5nm/kRF00dqIOCXfNOUsioiSHN1VPnLU8emen8=
-github.com/marstr/collection/v2 v2.0.0-preview1/go.mod h1:53MC3XxVQ/rUxiNS4bZTvx5QJSWNgZMqPFMJomGKob4=
-github.com/marstr/envelopes v0.5.1-0.20250702060636-15dfd7bb11c1 h1:5af3P4mw1WLDxEMWkD+9xmV8T2k7hgfeSdBxP7RGVF4=
-github.com/marstr/envelopes v0.5.1-0.20250702060636-15dfd7bb11c1/go.mod h1:uLRCVLFyjZPVfWMF48zisetTalGIt+I0Sm+ui6rZmB0=
+github.com/marstr/collection/v2 v2.0.0 h1:a0J20uXTesrD0HaCd+EyvTJzs34KQwEDVw12nd9q9Bw=
+github.com/marstr/collection/v2 v2.0.0/go.mod h1:53MC3XxVQ/rUxiNS4bZTvx5QJSWNgZMqPFMJomGKob4=
+github.com/marstr/envelopes v0.5.1-0.20250706052704-abd708bd96d8 h1:0qBnE35xefUbdmuf9+svFCz/4jRg6G7XQmxFbyBWwCM=
+github.com/marstr/envelopes v0.5.1-0.20250706052704-abd708bd96d8/go.mod h1:ejfyNhHkqWnJaxWANdGIjn+iSqrIDqyRLxGnIV8q9lY=
 github.com/marstr/units v1.0.1 h1:J1oBku8rInztZY9IO0W2fS1bZ60UotlmBLbyvyZLoSU=
 github.com/marstr/units v1.0.1/go.mod h1:B1/IxDKETT7FwLuU0ZOvdPePP9chjt0PLTt+qeVARJ8=
 github.com/mitchellh/go-homedir v1.1.0 h1:lukF9ziXFxDFPkA1vsr5zpc1XuPDn/wFntq5mG+4E0Y=
