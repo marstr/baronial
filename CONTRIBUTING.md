@@ -12,7 +12,7 @@ product.
 ## Setting up your machine
 
 Regardless of the operating system you're using, you'll need the following tools to contribute back to Baronial:
-1. [The Go Programming Language, version 1.12 or higher](https://golang.org/dl), for compilation.
+1. [The Go Programming Language, version 1.23 or higher](https://golang.org/dl), for compilation.
 1. [Git](https://git-scm.org), for source control.
 1. A text editor/IDE of your choice. Some popular options for working with Go include:
 	- [VS Code by Microsoft](https://code.visualstudio.com)
