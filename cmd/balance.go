@@ -28,7 +28,6 @@ import (
 	"github.com/marstr/envelopes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/marstr/baronial/internal/index"
 )
@@ -39,16 +38,28 @@ const (
 	balanceDepthDefault   = 1
 )
 
-var balanceConfig = viper.New()
-
 // balanceCmd represents the balance command
 var balanceCmd = &cobra.Command{
 	Use:     "balance [index]",
 	Aliases: []string{"bal", "b"},
 	Short:   "Scours a baronial directory (or subdirectory) for balance information.",
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
+		var timeout time.Duration
+		var err error
+		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		var ctx context.Context
+		if timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+		} else {
+			ctx = context.Background()
+		}
 
 		var targetDir string
 		if len(args) > 0 {
@@ -56,8 +67,6 @@ var balanceCmd = &cobra.Command{
 		} else {
 			targetDir = "."
 		}
-
-		var err error
 
 		targetDir, err = filepath.Abs(targetDir)
 		if err != nil {
@@ -121,8 +130,6 @@ var balanceCmd = &cobra.Command{
 }
 
 func init() {
-	balanceConfig.SetDefault(balanceDepthFlag, balanceDepthDefault)
-
 	rootCmd.AddCommand(balanceCmd)
 
 	// Here you will define your flags and configuration settings.
@@ -138,8 +145,9 @@ func init() {
 	balanceCmd.Flags().Uint8P(
 		balanceDepthFlag,
 		balanceDepthShorthand,
-		uint8(balanceConfig.GetInt(balanceDepthFlag)),
-		`How recursively deep the balance tree should be shown before being truncated.`)
+		balanceDepthDefault,
+		"How recursively deep the balance tree should be shown before being truncated.",
+	)
 }
 
 func writeBudgetBalances(_ context.Context, output io.Writer, budget envelopes.Budget) (err error) {

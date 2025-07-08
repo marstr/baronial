@@ -64,7 +64,7 @@ func init() {
 	// will be global for your application.
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.baronial.yaml)")
 
-	rootCmd.PersistentFlags().Int64(timeoutFlag, timeoutDefault, timeoutUsage)
+	rootCmd.PersistentFlags().Duration(timeoutFlag, timeoutDefault, timeoutUsage)
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
