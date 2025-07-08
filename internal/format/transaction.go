@@ -68,6 +68,12 @@ func ConcisePrintTransaction(_ context.Context, output io.Writer, subject envelo
 			return err
 		}
 	}
+	if !subject.Reverts.Equal(envelopes.ID{}) {
+		_, err = fmt.Fprintf(output, "\tReverts:\t%s\n", subject.Reverts)
+		if err != nil {
+			return err
+		}
+	}
 	_, err = fmt.Fprintf(output, "\tComment: \t%s\n", subject.Comment)
 	if err != nil {
 		return

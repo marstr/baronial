@@ -24,6 +24,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	timeoutFlag    = "timeout"
+	timeoutDefault = 0
+	timeoutUsage   = "The maximum time in seconds to allow the command to run. The default is '0', which will let the command run indefinitely."
+)
+
 var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
@@ -57,6 +63,8 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.baronial.yaml)")
+
+	rootCmd.PersistentFlags().Int64(timeoutFlag, timeoutDefault, timeoutUsage)
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
