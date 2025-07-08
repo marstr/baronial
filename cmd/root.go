@@ -27,7 +27,7 @@ import (
 const (
 	timeoutFlag    = "timeout"
 	timeoutDefault = 0
-	timeoutUsage   = "The maximum time in seconds to allow the command to run. The default is '0', which will let the command run indefinitely."
+	timeoutUsage   = "The maximum to allow the command to run. The default is '0', which will let the command run indefinitely."
 )
 
 var cfgFile string
