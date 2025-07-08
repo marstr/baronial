@@ -35,14 +35,26 @@ import (
 )
 
 var branchCmd = &cobra.Command{
-	Use: "branch {name}",
+	Use:     "branch {name}",
 	Aliases: []string{"br"},
-	Short: "Creates a branch with a given name.",
-	Args: cobra.MaximumNArgs(1),
-	Run: func(_ *cobra.Command, args []string) {
+	Short:   "Creates a branch with a given name.",
+	Args:    cobra.MaximumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		var timeout time.Duration
 		var err error
-		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
-		defer cancel()
+		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		var ctx context.Context
+		if timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+		} else {
+			ctx = context.Background()
+		}
 
 		var indexRootDir string
 		indexRootDir, err = index.RootDirectory(".")
