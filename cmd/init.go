@@ -18,7 +18,7 @@ package cmd
 import (
 	"context"
 	"os"
-	"path/filepath"
+	"time"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
@@ -31,28 +31,29 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Creates a new Baronial repository.",
-	Args:  cobra.MaximumNArgs(1),
-	Run: func(_ *cobra.Command, args []string) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+	Short: "Creates a new Baronial repository in the current working directory.",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		var timeout time.Duration
+		var err error
+		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		var ctx context.Context
+		if timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+		} else {
+			ctx = context.Background()
+		}
 
 		const initCmdFailurePrefix = "unable to initialize repository: "
 
 		const initialBranch = persist.DefaultBranch
-
-		var targetDir string
-		if len(args) > 0 {
-			targetDir = args[0]
-		} else {
-			var err error
-			targetDir, err = filepath.Abs(".")
-			if err != nil {
-				logrus.Fatal(initCmdFailurePrefix, err)
-			}
-
-			targetDir = filepath.Clean(targetDir)
-		}
 
 		dirsToCreate := []string{
 			index.RepoName,
@@ -71,7 +72,6 @@ var initCmd = &cobra.Command{
 		}
 
 		var repo persist.RepositoryReaderWriter
-		var err error
 		repo, err = filesystem.OpenRepositoryWithCache(ctx, index.RepoName, 10000)
 		if err != nil {
 			logrus.Fatal(err)
