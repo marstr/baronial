@@ -37,7 +37,7 @@ var creditConfig = viper.New()
 
 var creditCmd = &cobra.Command{
 	Use:     "credit {amount} {budget | account} [{budget | account}...]",
-	Aliases: []string{"c"},
+	Aliases: []string{"c", "cr"},
 	Short:   "Makes funds available for one or more category of spending.",
 	Args:    creditDebitArgValidation,
 	Run: func(cmd *cobra.Command, args []string) {
