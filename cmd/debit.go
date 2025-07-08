@@ -28,7 +28,7 @@ import (
 
 var debitCmd = &cobra.Command{
 	Use:     `debit {amount} {budget | account} [{budget | account}...]`,
-	Aliases: []string{"d"},
+	Aliases: []string{"d", "dr"},
 	Short:   `Removes funds from a category of spending.`,
 	Args:    creditDebitArgValidation,
 	Run: func(cmd *cobra.Command, args []string) {
