@@ -43,13 +43,19 @@ complicates all future tools and many may not do a good job. If you
 accidentally reverted a transaction, just commit a new transaction that is
 identical to the original.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var ctx context.Context
+		var timeout time.Duration
+		var err error
+		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
+		if err != nil {
+			logrus.Fatal(err)
+		}
 
-		timeout, err := commitCmd.Flags().GetInt64(timeoutFlag)
-		if err == nil {
+		var ctx context.Context
+		if timeout > 0 {
 			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+			ctx, cancel = context.WithTimeout(context.Background(), timeout)
 			defer cancel()
+
 		} else {
 			ctx = context.Background()
 		}
