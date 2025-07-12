@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"context"
+	"time"
+
 	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -14,8 +16,6 @@ const (
 	bringToImmediateDefault   = false
 	bringToImmediateUsage     = "Use the balance of the specified destination budget, but don't include its children."
 )
-
-var bringToConfig = viper.New()
 
 var bringToCmd = &cobra.Command{
 	Use:     "bring-to {balance} {src} {dest}",
@@ -28,12 +28,24 @@ var bringToCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(bringToCmd)
 	bringToCmd.Flags().BoolP(bringToImmediateFlag, bringToImmediateShorthand, bringToImmediateDefault, bringToImmediateUsage)
-	bringToConfig.BindPFlags(bringToCmd.Flags())
 }
 
 func RunBringTo(cmd *cobra.Command, args []string) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	var timeout time.Duration
+	var err error
+	timeout, err = cmd.Flags().GetDuration(timeoutFlag)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	var ctx context.Context
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+	} else {
+		ctx = context.Background()
+	}
 
 	desiredBal, err := envelopes.ParseBalance([]byte(args[0]))
 	if err != nil {
@@ -53,7 +65,13 @@ func RunBringTo(cmd *cobra.Command, args []string) error {
 	}
 
 	var currentBalance envelopes.Balance
-	if bringToConfig.GetBool(bringToImmediateFlag) {
+	var useImmediate bool
+	useImmediate, err = cmd.Flags().GetBool(bringToImmediateFlag)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	if useImmediate {
 		currentBalance = dest.Balance
 	} else {
 		currentBalance = dest.RecursiveBalance()

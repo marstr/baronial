@@ -35,9 +35,22 @@ var checkoutCmd = &cobra.Command{
 	Short:   "Resets the index to show the balances at a particular transaction.",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		var timeout time.Duration
 		var err error
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
+		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		var ctx context.Context
+		if timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+		} else {
+			ctx = context.Background()
+		}
 
 		var root string
 		root, err = index.RootDirectory(".")

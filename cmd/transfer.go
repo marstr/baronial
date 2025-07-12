@@ -31,8 +31,22 @@ var transferCmd = &cobra.Command{
 	Short:   "Moves funds from one category of spending to another.",
 	Args:    cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
+		var timeout time.Duration
+		var err error
+		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		var ctx context.Context
+		if timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+		} else {
+			ctx = context.Background()
+		}
 
 		rawSrc := args[1]
 		rawDest := args[2]

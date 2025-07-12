@@ -20,8 +20,8 @@ package cmd
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path"
+	"time"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
@@ -33,80 +33,49 @@ import (
 	"github.com/marstr/baronial/internal/index"
 )
 
-type diffCmd struct {
-	cobra.Command
-	Context context.Context
-	Repo    persist.RepositoryReader
-}
-
-func init() {
-	diff := newDiffCmd()
-
-	rootCmd.AddCommand(&diff.Command)
-}
-
-func newDiffCmd() *diffCmd {
-	return newDiffCmdWithContext(context.Background())
-}
-
-func newDiffCmdWithContext(ctx context.Context) *diffCmd {
-	retval := &diffCmd{
-		Context: ctx,
-	}
-
-	retval.Command = cobra.Command{
-		Use:     "diff [refspec] [refspec]",
-		Short:   "Finds the difference between two states, be they from the index or two transactions.",
-		Long:    ``,
-		Args:    retval.processArgs,
-		PreRunE: setPagedCobraOutput,
-		Run:     retval.run,
-	}
-
-	return retval
-}
-
-func (dc diffCmd) processArgs(cmd *cobra.Command, arg []string) error {
-	if err := cobra.MaximumNArgs(2)(cmd, arg); err != nil {
-		return err
-	}
-
-	for _, rs := range arg {
-		id, err := persist.Resolve(dc.Context, dc.Repo, persist.RefSpec(rs))
-		if err != nil || id.Equal(envelopes.ID{}) {
-			return fmt.Errorf("%q is not a valid refspec", rs)
-		}
-	}
-	return nil
-}
-
-func (dc diffCmd) run(cmd *cobra.Command, args []string) {
-	var err error
-	defer func() {
+var diffCmd = &cobra.Command{
+	Use:     "diff [refspec] [refspec]",
+	Short:   "Finds the difference between two states, be they from the index or two transactions.",
+	Long:    ``,
+	Args:    cobra.MaximumNArgs(2),
+	PreRunE: setPagedCobraOutput,
+	Run: func(cmd *cobra.Command, args []string) {
+		var timeout time.Duration
+		var err error
+		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
 		if err != nil {
-			logrus.Error(err)
+			logrus.Fatal(err)
+		}
+
+		var ctx context.Context
+		if timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+		} else {
+			ctx = context.Background()
+		}
+
+		var repoRoot string
+		repoRoot, err = index.RootDirectory(".")
+		if err != nil {
 			return
 		}
-	}()
 
-	var repoRoot string
-	repoRoot, err = index.RootDirectory(".")
-	if err != nil {
-		return
-	}
+		var left, right *envelopes.State
+		left, right, err = getDiffStates(ctx, args, repoRoot)
+		if err != nil {
+			return
+		}
 
-	var left, right *envelopes.State
-	left, right, err = getDiffStates(dc.Context, args, repoRoot)
-	if err != nil {
-		return
-	}
+		diff := left.Subtract(*right)
 
-	diff := left.Subtract(*right)
-
-	err = format.PrettyPrintImpact(cmd.OutOrStdout(), diff)
-	if err != nil {
-		return
-	}
+		err = format.PrettyPrintImpact(cmd.OutOrStdout(), diff)
+		if err != nil {
+			return
+		}
+	},
 }
 
 func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envelopes.State, *envelopes.State, error) {
@@ -170,4 +139,8 @@ func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envel
 	}
 
 	return left, right, nil
+}
+
+func init() {
+	rootCmd.AddCommand(diffCmd)
 }

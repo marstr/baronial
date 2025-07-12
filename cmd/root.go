@@ -27,7 +27,9 @@ import (
 const (
 	timeoutFlag    = "timeout"
 	timeoutDefault = 0
-	timeoutUsage   = "The maximum time in seconds to allow the command to run. The default is '0', which will let the command run indefinitely."
+	timeoutUsage   = `The maximum time to allow the command to run. The default is '0', which will let the command run indefinitely.
+
+The value should be a positive decimal number, with an optional fraction and a unit suffix. For example, "300s", "1.5h", or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", or "h".`
 )
 
 var cfgFile string
@@ -64,7 +66,7 @@ func init() {
 	// will be global for your application.
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.baronial.yaml)")
 
-	rootCmd.PersistentFlags().Int64(timeoutFlag, timeoutDefault, timeoutUsage)
+	rootCmd.PersistentFlags().Duration(timeoutFlag, timeoutDefault, timeoutUsage)
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
