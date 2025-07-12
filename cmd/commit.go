@@ -18,7 +18,6 @@ package cmd
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -30,8 +29,8 @@ import (
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/marstr/baronial/internal/index"
 )
@@ -39,7 +38,7 @@ import (
 const (
 	amountFlag      = "amount"
 	amountShorthand = "a"
-	amountDefault   = "USD 0.00"
+	amountDefault   = "<calculated>"
 	amountUsage     = "The magnitude of the transaction that should be displayed in logs."
 )
 
@@ -85,43 +84,75 @@ const (
 	bankRecordIDUsage     = "A unique ID assigned to this transaction by a financial institution."
 )
 
-var commitConfig = viper.New()
+var commitTransactionFromFlags envelopes.Transaction
 
 var commitCmd = &cobra.Command{
 	Use:   "commit",
 	Short: "Create a transaction with the current impacts in the index.",
 	Args: func(cmd *cobra.Command, args []string) error {
-		if commitConfig.IsSet(postedTimeFlag) {
-			if currentValue := commitConfig.GetString(postedTimeFlag); currentValue == postedTimeDefault {
-				commitConfig.SetDefault(postedTimeFlag, time.Now())
+		currentTime := time.Now()
+
+		if cmd.Flags().Changed(postedTimeFlag) {
+			if postedTime, err := cmd.Flags().GetString(postedTimeFlag); err == nil {
+				commitTransactionFromFlags.PostedTime, err = cast.ToTimeE(postedTime)
+				if err != nil {
+					return fmt.Errorf("unable to parse time from %q because: %v", postedTime, err)
+				}
 			}
-		}
-		if finalTimeValue := commitConfig.GetTime(postedTimeFlag); finalTimeValue.Equal(time.Time{}) {
-			return fmt.Errorf("unable to parse time from %q", commitConfig.GetString(postedTimeFlag))
+		} else {
+			commitTransactionFromFlags.PostedTime = currentTime
 		}
 
-		if commitConfig.IsSet(actualTimeFlag) {
-			if currentValue := commitConfig.GetString(actualTimeFlag); currentValue == actualTimeDefault {
-				commitConfig.SetDefault(actualTimeFlag, "")
+		if cmd.Flags().Changed(actualTimeFlag) {
+			if actualTime, err := cmd.Flags().GetString(actualTimeFlag); err == nil {
+				commitTransactionFromFlags.ActualTime, err = cast.ToTimeE(actualTime)
+				if err != nil {
+					return fmt.Errorf("unable to parse time from %q because: %v", actualTime, err)
+				}
 			}
 		}
-		if finalTimeValue := commitConfig.GetTime(actualTimeFlag); commitConfig.GetString(actualTimeFlag) != "" && finalTimeValue.Equal(time.Time{}) {
-			return fmt.Errorf("unable to parse time from %q", commitConfig.GetString(actualTimeFlag))
+
+		if cmd.Flags().Changed(amountFlag) {
+			rawAmount, err := cmd.Flags().GetString(amountFlag)
+			if err != nil {
+				return err
+			}
+			commitTransactionFromFlags.Amount, err = envelopes.ParseBalance([]byte(rawAmount))
+			if err != nil {
+				return err
+			}
+		} else {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			var err error
+			commitTransactionFromFlags.Amount, err = calculateAmount(ctx, ".")
+			if err != nil {
+				logrus.Fatalf("Failed to calculate the amount from %q because of the following error: %s", amountDefault, err)
+			}
+
 		}
 
-		if !commitConfig.IsSet(amountFlag) {
-			return errors.New(`missing flag "` + amountFlag + `"`)
-		}
+		commitTransactionFromFlags.EnteredTime = time.Now()
 
 		return cobra.NoArgs(cmd, args)
 	},
-	Run: func(_ *cobra.Command, _ []string) {
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
-
-		amount, err := envelopes.ParseBalance([]byte(commitConfig.GetString(amountFlag)))
+	Run: func(cmd *cobra.Command, _ []string) {
+		var timeout time.Duration
+		var err error
+		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
 		if err != nil {
 			logrus.Fatal(err)
+		}
+
+		var ctx context.Context
+		if timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+		} else {
+			ctx = context.Background()
 		}
 
 		targetDir, err := index.RootDirectory(".")
@@ -129,22 +160,21 @@ var commitCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		accountsDir := filepath.Join(targetDir, index.AccountsDir)
-		accounts, err := index.LoadAccounts(ctx, accountsDir)
+		commitTransactionFromFlags.State, err = index.LoadState(ctx, targetDir)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		budgetDir := filepath.Join(targetDir, index.BudgetDir)
-		budget, err := index.LoadBudget(ctx, budgetDir)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		budgetBal := budget.RecursiveBalance()
+		budgetBal := commitTransactionFromFlags.State.Budget.RecursiveBalance()
 		var accountsBal envelopes.Balance
-		for _, entry := range accounts {
+		for _, entry := range commitTransactionFromFlags.State.Accounts {
 			accountsBal = accountsBal.Add(entry)
+		}
+
+		var force bool
+		force, err = cmd.Flags().GetBool(forceFlag)
+		if err != nil {
+			logrus.Fatal(err)
 		}
 
 		if !budgetBal.Equal(accountsBal) {
@@ -154,7 +184,7 @@ var commitCmd = &cobra.Command{
 				budgetBal,
 				accountsBal.Sub(budgetBal))
 
-			if !commitConfig.GetBool(forceFlag) {
+			if !force {
 				shouldContinue, err := promptToContinue(
 					ctx,
 					"proceed despite imbalance?",
@@ -176,21 +206,24 @@ var commitCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		currentTransaction := envelopes.Transaction{
-			Amount:   amount,
-			Merchant: commitConfig.GetString(merchantFlag),
-			Comment:  commitConfig.GetString(commentFlag),
-			RecordID: envelopes.BankRecordID(commitConfig.GetString(bankRecordIDFlag)),
-			State: &envelopes.State{
-				Accounts: accounts,
-				Budget:   budget,
-			},
-			ActualTime:  commitConfig.GetTime(actualTimeFlag),
-			PostedTime:  commitConfig.GetTime(postedTimeFlag),
-			EnteredTime: time.Now(),
+		commitTransactionFromFlags.Merchant, err = cmd.Flags().GetString(merchantFlag)
+		if err != nil {
+			logrus.Fatal(err)
 		}
 
-		err = persist.Commit(ctx, repo, currentTransaction)
+		commitTransactionFromFlags.Comment, err = cmd.Flags().GetString(commentFlag)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		var rawRecordId string
+		rawRecordId, err = cmd.Flags().GetString(bankRecordIDFlag)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		commitTransactionFromFlags.RecordID = envelopes.BankRecordID(rawRecordId)
+
+		err = persist.Commit(ctx, repo, commitTransactionFromFlags)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -200,27 +233,13 @@ var commitCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(commitCmd)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	if defaultAmount, err := findDefaultAmount(ctx, "."); err == nil {
-		commitConfig.SetDefault(amountFlag, defaultAmount.String())
-	} else {
-		commitConfig.SetDefault(amountFlag, amountDefault)
-	}
-
-	commitCmd.PersistentFlags().StringP(merchantFlag, merchantShorthand, merchantDefault, merchantUsage)
-	commitCmd.PersistentFlags().StringP(commentFlag, commentShorthand, commentDefault, commentUsage)
-	commitCmd.PersistentFlags().StringP(postedTimeFlag, postedTimeShorthand, postedTimeDefault, postedTimeUsage)
-	commitCmd.PersistentFlags().StringP(actualTimeFlag, actualTimeShorthand, actualTimeDefault, actualTimeUsage)
-	commitCmd.PersistentFlags().StringP(amountFlag, amountShorthand, commitConfig.GetString(amountFlag), amountUsage)
-	commitCmd.PersistentFlags().StringP(bankRecordIDFlag, bankRecordIDShorthand, bankRecordIDDefault, bankRecordIDUsage)
-	commitCmd.PersistentFlags().BoolP(forceFlag, forceShorthand, forceDefault, forceUsage)
-
-	err := commitConfig.BindPFlags(commitCmd.PersistentFlags())
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	commitCmd.Flags().StringP(merchantFlag, merchantShorthand, merchantDefault, merchantUsage)
+	commitCmd.Flags().StringP(commentFlag, commentShorthand, commentDefault, commentUsage)
+	commitCmd.Flags().StringP(postedTimeFlag, postedTimeShorthand, postedTimeDefault, postedTimeUsage)
+	commitCmd.Flags().StringP(actualTimeFlag, actualTimeShorthand, actualTimeDefault, actualTimeUsage)
+	commitCmd.Flags().StringP(amountFlag, amountShorthand, amountDefault, amountUsage)
+	commitCmd.Flags().StringP(bankRecordIDFlag, bankRecordIDShorthand, bankRecordIDDefault, bankRecordIDUsage)
+	commitCmd.Flags().BoolP(forceFlag, forceShorthand, forceDefault, forceUsage)
 }
 
 func promptToContinue(ctx context.Context, message string, output io.Writer, input io.Reader) (bool, error) {
@@ -294,7 +313,7 @@ func promptToContinue(ctx context.Context, message string, output io.Writer, inp
 	}
 }
 
-func findDefaultAmount(ctx context.Context, targetDir string) (envelopes.Balance, error) {
+func calculateAmount(ctx context.Context, targetDir string) (envelopes.Balance, error) {
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
@@ -303,25 +322,16 @@ func findDefaultAmount(ctx context.Context, targetDir string) (envelopes.Balance
 		return envelopes.Balance{}, err
 	}
 
-	accountsDir := filepath.Join(targetDir, index.AccountsDir)
-	accounts, err := index.LoadAccounts(ctx, accountsDir)
+	updated, err := index.LoadState(ctx, targetDir)
 	if err != nil {
 		return envelopes.Balance{}, err
-	}
-
-	budgetDir := filepath.Join(targetDir, index.BudgetDir)
-	budget, err := index.LoadBudget(ctx, budgetDir)
-	if err != nil {
-		return envelopes.Balance{}, err
-	}
-
-	updated := envelopes.State{
-		Accounts: accounts,
-		Budget:   budget,
 	}
 
 	var repo persist.RepositoryReader
 	repo, err = filesystem.OpenRepositoryWithCache(ctx, filepath.Join(targetDir, index.RepoName), 10000)
+	if err != nil {
+		return envelopes.Balance{}, err
+	}
 
 	current, err := repo.Current(ctx)
 	if err != nil {
@@ -333,11 +343,16 @@ func findDefaultAmount(ctx context.Context, targetDir string) (envelopes.Balance
 		return envelopes.Balance{}, err
 	}
 
-	var head envelopes.Transaction
-	err = repo.LoadTransaction(ctx, id, &head)
-	if err != nil {
-		return envelopes.Balance{}, err
+	var prevState envelopes.State
+	// This happens when a repository is first initialized
+	if !id.Equal(envelopes.ID{}) {
+		var head envelopes.Transaction
+		err = repo.LoadTransaction(ctx, id, &head)
+		if err != nil {
+			return envelopes.Balance{}, err
+		}
+		prevState = *head.State
 	}
 
-	return envelopes.CalculateAmount(*head.State, updated), nil
+	return envelopes.CalculateAmount(prevState, *updated), nil
 }
