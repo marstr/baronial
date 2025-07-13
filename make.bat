@@ -9,7 +9,9 @@ if "%1" == "install" (
     exit
 )
 
-go build -ldflags "-X github.com/marstr/baronial/cmd.revision=%revision% -X github.com/marstr/baronial/cmd.version=%version%" -o bin\windows\baronial.exe
+if "%1" == "" (
+    go build -ldflags "-X github.com/marstr/baronial/cmd.revision=%revision% -X github.com/marstr/baronial/cmd.version=%version%" -o bin\windows\baronial.exe
+)
 
 if "%1" == "darwin" (
     setlocal
