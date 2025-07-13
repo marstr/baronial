@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 func setPagedCobraOutput(cmd *cobra.Command, _ []string) error {
@@ -16,7 +16,8 @@ func setPagedCobraOutput(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	cmd.SetOutput(output)
+	cmd.SetOut(output)
+	cmd.SetErr(output)
 	cmd.PostRunE = func(cmd *cobra.Command, args []string) error {
 		return output.Close()
 	}
@@ -28,9 +29,9 @@ func setPagedCobraOutput(cmd *cobra.Command, _ []string) error {
 // your shell.
 func NewPageWriteCloser(outFile *os.File, errFile *os.File) (io.WriteCloser, error) {
 	retval := &pageWriteCloser{}
-	if terminal.IsTerminal(int(outFile.Fd())) {
+	if term.IsTerminal(int(outFile.Fd())) {
 		var err error
-		if pagingPrograms == nil || len(pagingPrograms) == 0 {
+		if len(pagingPrograms) == 0 {
 			return nil, errors.New("unrecognized platform, skipping paging")
 		}
 
@@ -57,15 +58,15 @@ func NewPageWriteCloser(outFile *os.File, errFile *os.File) (io.WriteCloser, err
 
 type pageWriteCloser struct {
 	procStart sync.Once
-	handle io.WriteCloser
+	handle    io.WriteCloser
 	childProc *exec.Cmd
 }
 
 func (pwc *pageWriteCloser) Write(p []byte) (int, error) {
 	var err error
-	pwc.procStart.Do(func(){
-		if pwc.childProc != nil{
-			err = pwc.childProc.Start();
+	pwc.procStart.Do(func() {
+		if pwc.childProc != nil {
+			err = pwc.childProc.Start()
 		}
 	})
 	if err != nil {

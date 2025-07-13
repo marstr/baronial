@@ -30,12 +30,26 @@ import (
 )
 
 var revParseCmd = &cobra.Command{
-	Use: "rev-parse {refspec}",
+	Use:   "rev-parse {refspec}",
 	Short: "Prints a realized transaction ID.",
-	Args: cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
-		defer cancel()
+		var timeout time.Duration
+		var err error
+		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		var ctx context.Context
+		if timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+		} else {
+			ctx = context.Background()
+		}
 
 		root, err := index.RootDirectory(".")
 		if err != nil {
