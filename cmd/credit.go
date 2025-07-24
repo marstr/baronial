@@ -16,9 +16,7 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"time"
 
 	"github.com/marstr/envelopes"
 	"github.com/sirupsen/logrus"
@@ -33,22 +31,8 @@ var creditCmd = &cobra.Command{
 	Short:   "Makes funds available for one or more category of spending.",
 	Args:    creditDebitArgValidation,
 	Run: func(cmd *cobra.Command, args []string) {
-		var timeout time.Duration
-		var err error
-		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		var ctx context.Context
-		if timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-
-		} else {
-			ctx = context.Background()
-		}
+		ctx, cancel := RootContext(cmd)
+		defer cancel()
 
 		rawMagnitude := args[0]
 		magnitude, err := envelopes.ParseBalance([]byte(rawMagnitude))
@@ -76,28 +60,14 @@ func init() {
 }
 
 func creditDebitArgValidation(cmd *cobra.Command, args []string) error {
-	var timeout time.Duration
-	var err error
-	timeout, err = cmd.Flags().GetDuration(timeoutFlag)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	var ctx context.Context
-	if timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(context.Background(), timeout)
-		defer cancel()
-
-	} else {
-		ctx = context.Background()
-	}
+	ctx, cancel := RootContext(cmd)
+	defer cancel()
 
 	if argCount := len(args); argCount < 2 {
 		return fmt.Errorf("too few arguments (%d). %q requires at least a balance and one budget or account", argCount, cmd.Name())
 	}
 
-	_, err = envelopes.ParseBalance([]byte(args[0]))
+	_, err := envelopes.ParseBalance([]byte(args[0]))
 	if err != nil {
 		return fmt.Errorf("%q not recognized as an amount", args[0])
 	}
