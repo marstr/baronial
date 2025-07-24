@@ -23,7 +23,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"time"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
@@ -40,22 +39,10 @@ var branchCmd = &cobra.Command{
 	Short:   "Creates a branch with a given name.",
 	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		var timeout time.Duration
+		ctx, cancel := RootContext(cmd)
+		defer cancel()
+
 		var err error
-		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		var ctx context.Context
-		if timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-		} else {
-			ctx = context.Background()
-		}
-
 		var indexRootDir string
 		indexRootDir, err = index.RootDirectory(".")
 		if err != nil {
