@@ -16,9 +16,7 @@
 package cmd
 
 import (
-	"context"
 	"path"
-	"time"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
@@ -35,24 +33,11 @@ var checkoutCmd = &cobra.Command{
 	Short:   "Resets the index to show the balances at a particular transaction.",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		var timeout time.Duration
-		var err error
-		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		var ctx context.Context
-		if timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-
-		} else {
-			ctx = context.Background()
-		}
+		ctx, cancel := RootContext(cmd)
+		defer cancel()
 
 		var root string
+		var err error
 		root, err = index.RootDirectory(".")
 		if err != nil {
 			logrus.Fatal(err)
