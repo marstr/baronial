@@ -102,7 +102,6 @@ func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envel
 		return target.State, nil
 	}
 
-	index.LoadState(ctx, indexRoot)
 	switch len(args) {
 	case 0: // Compare current index against HEAD
 		right, err = loadFromRepository(ctx, persist.MostRecentTransactionAlias)
@@ -130,7 +129,7 @@ func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envel
 			return nil, nil, err
 		}
 
-		left, err = loadFromRepository(ctx, persist.RefSpec(args[0]))
+		left, err = loadFromRepository(ctx, persist.RefSpec(args[1]))
 		if err != nil {
 			return nil, nil, err
 		}
