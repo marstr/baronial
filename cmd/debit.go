@@ -16,9 +16,6 @@
 package cmd
 
 import (
-	"context"
-	"time"
-
 	"github.com/marstr/envelopes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -32,22 +29,8 @@ var debitCmd = &cobra.Command{
 	Short:   `Removes funds from a category of spending.`,
 	Args:    creditDebitArgValidation,
 	Run: func(cmd *cobra.Command, args []string) {
-		var timeout time.Duration
-		var err error
-		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		var ctx context.Context
-		if timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-
-		} else {
-			ctx = context.Background()
-		}
+		ctx, cancel := RootContext(cmd)
+		defer cancel()
 
 		rawMagnitude := args[0]
 		magnitude, err := envelopes.ParseBalance([]byte(rawMagnitude))
