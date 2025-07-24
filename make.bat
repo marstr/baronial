@@ -27,3 +27,10 @@ if "%1" == "linux" (
     endlocal
 )
 
+if "%1" == "android" (
+    setlocal
+    set GOOS=android
+    set GOARCH=arm64
+    go build -ldflags "-X github.com/marstr/baronial/cmd.revision=%revision% -X github.com/marstr/baronial/cmd.version=%version%" -o bin\android\%GOARCH%\baronial
+    endlocal
+)
