@@ -16,10 +16,8 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"path"
-	"time"
 
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
@@ -34,22 +32,8 @@ var revParseCmd = &cobra.Command{
 	Short: "Prints a realized transaction ID.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		var timeout time.Duration
-		var err error
-		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		var ctx context.Context
-		if timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-
-		} else {
-			ctx = context.Background()
-		}
+		ctx, cancel := RootContext(cmd)
+		defer cancel()
 
 		root, err := index.RootDirectory(".")
 		if err != nil {
