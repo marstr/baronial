@@ -138,22 +138,8 @@ var commitCmd = &cobra.Command{
 		return cobra.NoArgs(cmd, args)
 	},
 	Run: func(cmd *cobra.Command, _ []string) {
-		var timeout time.Duration
-		var err error
-		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		var ctx context.Context
-		if timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-
-		} else {
-			ctx = context.Background()
-		}
+		ctx, cancel := RootContext(cmd)
+		defer cancel()
 
 		targetDir, err := index.RootDirectory(".")
 		if err != nil {
