@@ -186,8 +186,9 @@ var commitCmd = &cobra.Command{
 			}
 		}
 
+		repoLoc := filepath.Join(targetDir, index.RepoName)
 		var repo persist.RepositoryReaderWriter
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, filepath.Join(targetDir, index.RepoName), 10000)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, repoLoc, 10000)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -200,6 +201,28 @@ var commitCmd = &cobra.Command{
 		commitTransactionFromFlags.Comment, err = cmd.Flags().GetString(commentFlag)
 		if err != nil {
 			logrus.Fatal(err)
+		}
+
+		var pendingRevert bool
+		pendingRevert, err = RevertIsInProgress(ctx, repoLoc)
+		if err != nil {
+			logrus.Warn("unable to read if revert is staged, assuming not")
+		}
+
+		if pendingRevert {
+			var revertParameters RevertParameters
+			err = RevertUnstowProgress(ctx, repoLoc, &revertParameters)
+			if err != nil {
+				logrus.Fatal("unable to read pending revert")
+			}
+
+			commitTransactionFromFlags.Reverts = revertParameters.Reverts[0]
+
+			if commitTransactionFromFlags.Comment == "" {
+				commitTransactionFromFlags.Comment = revertParameters.Comment
+			}
+
+			defer RevertResetProgress(ctx, repoLoc)
 		}
 
 		var rawRecordId string
