@@ -16,9 +16,12 @@ limitations under the License.
 package cmd
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
@@ -27,6 +30,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
+type RevertParameters struct {
+	Comment string         `json:"comment,omitempty"`
+	Reverts []envelopes.ID `json:"reverts"`
+}
 
 // revertCmd represents the revert command
 var revertCmd = &cobra.Command{
@@ -40,6 +48,7 @@ It is not advised to revert a revert. Even if this tool handles it well, it
 complicates all future tools and many may not do a good job. If you 
 accidentally reverted a transaction, just commit a new transaction that is
 identical to the original.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := RootContext(cmd)
 		defer cancel()
@@ -49,8 +58,9 @@ identical to the original.`,
 			logrus.Fatal(err)
 		}
 
+		repoLoc := filepath.Join(root, index.RepoName)
 		var repo persist.RepositoryReaderWriter
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(root, index.RepoName), 10000)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, repoLoc, 10000)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -91,8 +101,88 @@ identical to the original.`,
 			logrus.Fatal(err)
 		}
 
+		var inProg bool
+		inProg, err = RevertIsInProgress(ctx, repoLoc)
+		if err != nil {
+			logrus.Warn("couldn't see if previous revert was in progress because: ", err)
+		}
+
+		var revertParams RevertParameters
+
+		if inProg {
+			err = RevertUnstowProgress(ctx, repoLoc, &revertParams)
+			if err != nil {
+				logrus.Fatal("couldn't read the currently in-progress revert because: ", err)
+			}
+		}
+
+		revertParams.Reverts = append(revertParams.Reverts, id)
+		revertParams.Comment = getRevertComment(revertParams.Reverts)
+
+		err = RevertStowProgress(ctx, repoLoc, revertParams)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Unable to stow revert information. Please reset to the last known good state.")
+			logrus.Fatal(err)
+		}
+
 		fmt.Printf("Undid the effects of transaction %s. Please check current balances for accuracy, make any necessary edits, then commit.", id)
 	},
+}
+
+func RevertIsInProgress(_ context.Context, repoLoc string) (bool, error) {
+	_, err := os.Stat(getRevertParamsLoc(repoLoc))
+	if err == nil {
+		return true, nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	} else {
+		return false, err
+	}
+}
+
+func RevertStowProgress(_ context.Context, repoLoc string, parameters RevertParameters) error {
+	const filePermissions = 0660 // owner and group can read and write. The file is not executable. Other users cannot read it.
+	toWrite, err := json.Marshal(parameters)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(getRevertParamsLoc(repoLoc), toWrite, filePermissions)
+}
+
+func RevertUnstowProgress(_ context.Context, repoLoc string, destination *RevertParameters) error {
+	contents, err := os.ReadFile(getRevertParamsLoc(repoLoc))
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(contents, destination)
+}
+
+func RevertResetProgress(_ context.Context, repoLoc string) error {
+	return os.Remove(getRevertParamsLoc(repoLoc))
+}
+
+func getRevertParamsLoc(repoLoc string) string {
+	return filepath.Join(repoLoc, "revert.json")
+}
+
+func getRevertComment(reverts []envelopes.ID) string {
+	var buf bytes.Buffer
+
+	fmt.Fprint(&buf, "Reverts ")
+
+	seenAny := false
+	for _, id := range reverts {
+		seenAny = true
+		fmt.Fprintf(&buf, "%s, ", id)
+	}
+
+	if seenAny {
+		buf.Truncate(buf.Len() - 2)
+	}
+
+	return buf.String()
 }
 
 func init() {
