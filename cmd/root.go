@@ -16,10 +16,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"sync"
+	"time"
 
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -47,6 +51,32 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
+}
+
+var (
+	parseTimeout sync.Once
+	rootContext  context.Context
+	rootCancel   context.CancelFunc
+)
+
+func RootContext(cmd *cobra.Command) (context.Context, context.CancelFunc) {
+	parseTimeout.Do(func() {
+		var timeout time.Duration
+		var err error
+		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		if timeout > 0 {
+			rootContext, rootCancel = context.WithTimeout(context.Background(), timeout)
+
+		} else {
+			rootContext, rootCancel = context.WithCancel(context.Background())
+		}
+	})
+
+	return rootContext, rootCancel
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

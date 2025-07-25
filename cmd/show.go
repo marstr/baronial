@@ -16,10 +16,8 @@
 package cmd
 
 import (
-	"context"
 	"os"
 	"path"
-	"time"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
@@ -39,22 +37,8 @@ displayed. However, the particular impacts to accounts and budgets are hidden
 for the sake of brevity. This command shows all known details of a transaction.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		var timeout time.Duration
-		var err error
-		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		var ctx context.Context
-		if timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-
-		} else {
-			ctx = context.Background()
-		}
+		ctx, cancel := RootContext(cmd)
+		defer cancel()
 
 		root, err := index.RootDirectory(".")
 		if err != nil {

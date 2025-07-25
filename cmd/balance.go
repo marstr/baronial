@@ -23,7 +23,6 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
-	"time"
 
 	"github.com/marstr/envelopes"
 	"github.com/sirupsen/logrus"
@@ -44,22 +43,8 @@ var balanceCmd = &cobra.Command{
 	Aliases: []string{"bal", "b"},
 	Short:   "Scours a baronial directory (or subdirectory) for balance information.",
 	Run: func(cmd *cobra.Command, args []string) {
-		var timeout time.Duration
-		var err error
-		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		var ctx context.Context
-		if timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-
-		} else {
-			ctx = context.Background()
-		}
+		ctx, cancel := RootContext(cmd)
+		defer cancel()
 
 		var targetDir string
 		if len(args) > 0 {
@@ -68,6 +53,7 @@ var balanceCmd = &cobra.Command{
 			targetDir = "."
 		}
 
+		var err error
 		targetDir, err = filepath.Abs(targetDir)
 		if err != nil {
 			logrus.Fatal(err)

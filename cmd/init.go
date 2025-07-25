@@ -16,9 +16,7 @@
 package cmd
 
 import (
-	"context"
 	"os"
-	"time"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
@@ -34,22 +32,8 @@ var initCmd = &cobra.Command{
 	Short: "Creates a new Baronial repository in the current working directory.",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		var timeout time.Duration
-		var err error
-		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		var ctx context.Context
-		if timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-
-		} else {
-			ctx = context.Background()
-		}
+		ctx, cancel := RootContext(cmd)
+		defer cancel()
 
 		const initCmdFailurePrefix = "unable to initialize repository: "
 
@@ -71,8 +55,7 @@ var initCmd = &cobra.Command{
 			}
 		}
 
-		var repo persist.RepositoryReaderWriter
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, index.RepoName, 10000)
+		repo, err := filesystem.OpenRepositoryWithCache(ctx, index.RepoName, 10000)
 		if err != nil {
 			logrus.Fatal(err)
 		}

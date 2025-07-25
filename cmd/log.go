@@ -22,7 +22,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
@@ -43,25 +42,10 @@ var logCmd = &cobra.Command{
 	},
 	PreRunE: setPagedCobraOutput,
 	Run: func(cmd *cobra.Command, args []string) {
-		var timeout time.Duration
-		var err error
-		timeout, err = cmd.Flags().GetDuration(timeoutFlag)
-		if err != nil {
-			logrus.Fatal(err)
-		}
+		ctx, cancel := RootContext(cmd)
+		defer cancel()
 
-		var ctx context.Context
-		if timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-
-		} else {
-			ctx = context.Background()
-		}
-
-		var root string
-		root, err = index.RootDirectory(".")
+		root, err := index.RootDirectory(".")
 		if err != nil {
 			logrus.Error(err)
 			return
