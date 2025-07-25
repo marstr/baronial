@@ -72,8 +72,7 @@ func RootContext(cmd *cobra.Command) (context.Context, context.CancelFunc) {
 			rootContext, rootCancel = context.WithTimeout(context.Background(), timeout)
 
 		} else {
-			rootContext = context.Background()
-			rootCancel = func() {}
+			rootContext, rootCancel = context.WithCancel(context.Background())
 		}
 	})
 
