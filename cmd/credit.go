@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/marstr/envelopes"
@@ -60,7 +61,9 @@ func init() {
 }
 
 func creditDebitArgValidation(cmd *cobra.Command, args []string) error {
-	ctx, cancel := RootContext(cmd)
+	var cancel context.CancelFunc
+	ctx, _ := RootContext(cmd)
+	ctx, cancel = context.WithCancel(ctx)
 	defer cancel()
 
 	if argCount := len(args); argCount < 2 {
