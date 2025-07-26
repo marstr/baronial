@@ -70,7 +70,7 @@ var checkoutCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		err = index.CheckoutTransaction(ctx, &target, root, 0777)
+		err = index.CheckoutTransaction(ctx, &target, root, 0660)
 		if err != nil {
 			logrus.Fatal(err)
 		}
