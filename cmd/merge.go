@@ -18,8 +18,12 @@
 package cmd
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
@@ -28,6 +32,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
+type MergeParameters struct {
+	Comment     string            `json:"comment,omitempty"`
+	Parents     []envelopes.ID    `json:"parent_ids"`
+	ParentNames []persist.RefSpec `json:"parent_names"`
+}
 
 var mergeCmd = &cobra.Command{
 	Use:  "merge {refspec} [refspec]...",
@@ -47,8 +57,53 @@ var mergeCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
+		var currentHead persist.RefSpec
+		currentHead, err = repo.Current(ctx)
+		if err != nil {
+			logrus.Fatal("couldn't read what's currently checked out because: ", err)
+		}
+
+		heads := append([]persist.RefSpec{currentHead}, stringsToRefSpecs(args)...)
+
+		var inProg bool
+		inProg, err = MergeIsInProgress(ctx, root)
+		if err != nil {
+			logrus.Warn("couldn't see if previous merge is in progress because: ", err)
+		}
+
+		var mergeParams MergeParameters
+
+		if inProg {
+			err = MergeUnstowProgress(ctx, root, &mergeParams)
+			if err != nil {
+				logrus.Fatal("couldn't read the currently in-progress merge because: ", err)
+			}
+		}
+
+		mergeParams.ParentNames = append(mergeParams.ParentNames, heads...)
+		for _, head := range heads {
+			var id envelopes.ID
+			id, err = persist.Resolve(ctx, repo, head)
+			if err != nil {
+				logrus.Fatalf("couldn't resolve head %q because: %v", head, err)
+			}
+
+			mergeParams.Parents = append(mergeParams.Parents, id)
+		}
+
+		mergeParams.Comment = fmt.Sprintf(
+			"Merging %s into %s",
+			strings.Join(refSpecsToStrings(mergeParams.ParentNames)[1:], ", "),
+			string(mergeParams.ParentNames[0]),
+		)
+
+		err = MergeStowProgress(ctx, root, mergeParams)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
 		var merged envelopes.State
-		merged, err = persist.Merge(ctx, repo, append([]persist.RefSpec{persist.MostRecentTransactionAlias}, stringsToRefSpecs(args)...))
+		merged, err = persist.Merge(ctx, repo, heads)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -62,6 +117,53 @@ var mergeCmd = &cobra.Command{
 	},
 }
 
+func MergeIsInProgress(_ context.Context, repoLoc string) (bool, error) {
+	_, err := os.Stat(getMergeParamsLoc(repoLoc))
+	if err == nil {
+		return true, nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	} else {
+		return false, err
+	}
+}
+
+func MergeStowProgress(_ context.Context, repoLoc string, parameters MergeParameters) error {
+	const filePermissions = 0660
+	toWrite, err := json.Marshal(parameters)
+	if err != nil {
+		return fmt.Errorf("couldn't marshal merge parameters: %w", err)
+	}
+
+	err = os.WriteFile(getMergeParamsLoc(repoLoc), toWrite, filePermissions)
+	if err != nil {
+		return fmt.Errorf("couldn't write merge parameter file: %w", err)
+	}
+
+	return nil
+}
+
+func MergeUnstowProgress(_ context.Context, repoLoc string, destination *MergeParameters) error {
+	contents, err := os.ReadFile(getMergeParamsLoc(repoLoc))
+	if err != nil {
+		return fmt.Errorf("couldn't read merge parameter file: %w", err)
+	}
+
+	err = json.Unmarshal(contents, destination)
+	if err != nil {
+		return fmt.Errorf("couldn't parse the merge parameter json: %w", err)
+	}
+	return nil
+}
+
+func MergeResetProgress(_ context.Context, repoLoc string) error {
+	return os.Remove(getRevertParamsLoc(repoLoc))
+}
+
+func getMergeParamsLoc(repoLoc string) string {
+	return filepath.Join(repoLoc, "merge.json")
+}
+
 func init() {
 	rootCmd.AddCommand(mergeCmd)
 }
@@ -70,6 +172,14 @@ func stringsToRefSpecs(before []string) []persist.RefSpec {
 	after := make([]persist.RefSpec, len(before))
 	for i := range before {
 		after[i] = persist.RefSpec(before[i])
+	}
+	return after
+}
+
+func refSpecsToStrings(before []persist.RefSpec) []string {
+	after := make([]string, len(before))
+	for i := range before {
+		after[i] = string(before[i])
 	}
 	return after
 }
