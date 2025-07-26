@@ -203,6 +203,29 @@ var commitCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
+		var pendingMerge bool
+		pendingMerge, err = MergeIsInProgress(ctx, repoLoc)
+		if err != nil {
+			logrus.Warn("unable to read if merge is staged, assuming not")
+		}
+
+		var additionalParents []envelopes.ID
+
+		if pendingMerge {
+			var mergeParams MergeParameters
+			err = MergeUnstowProgress(ctx, repoLoc, &mergeParams)
+			if err != nil {
+				logrus.Fatal("unable to read pending merge")
+			}
+
+			additionalParents = mergeParams.Parents[1:]
+
+			if commitTransactionFromFlags.Comment == "" {
+				commitTransactionFromFlags.Comment = mergeParams.Comment
+			}
+			defer MergeResetProgress(ctx, repoLoc)
+		}
+
 		var pendingRevert bool
 		pendingRevert, err = RevertIsInProgress(ctx, repoLoc)
 		if err != nil {
@@ -232,7 +255,7 @@ var commitCmd = &cobra.Command{
 		}
 		commitTransactionFromFlags.RecordID = envelopes.BankRecordID(rawRecordId)
 
-		err = persist.Commit(ctx, repo, commitTransactionFromFlags)
+		err = persist.Commit(ctx, repo, commitTransactionFromFlags, additionalParents...)
 		if err != nil {
 			logrus.Fatal(err)
 		}
