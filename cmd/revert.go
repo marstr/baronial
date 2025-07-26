@@ -82,21 +82,15 @@ identical to the original.`,
 			logrus.Fatal(err)
 		}
 
-		var headID envelopes.ID
-		headID, err = persist.Resolve(ctx, repo, persist.MostRecentTransactionAlias)
+		var balances *envelopes.State
+		balances, err = index.LoadState(ctx, root)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		var head envelopes.Transaction
-		err = repo.LoadTransaction(ctx, headID, &head)
-		if err != nil {
-			logrus.Fatal(err)
-		}
+		updated := envelopes.State(balances.Add(envelopes.State(delta.Negate())))
 
-		updated := envelopes.State(head.State.Add(envelopes.State(delta.Negate())))
-
-		err = index.CheckoutState(ctx, &updated, root, os.ModePerm)
+		err = index.CheckoutState(ctx, &updated, root, 0660)
 		if err != nil {
 			logrus.Fatal(err)
 		}

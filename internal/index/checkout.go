@@ -17,7 +17,6 @@ package index
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -41,7 +40,7 @@ func CheckoutState(ctx context.Context, state *envelopes.State, targetDir string
 		return err
 	}
 
-	err = os.Mkdir(accountsDir, perm)
+	err = os.Mkdir(accountsDir, perm|os.ModeDir|0110)
 	if err != nil {
 		return err
 	}
@@ -52,7 +51,7 @@ func CheckoutState(ctx context.Context, state *envelopes.State, targetDir string
 		return err
 	}
 
-	err = os.Mkdir(budgetDir, perm)
+	err = os.Mkdir(budgetDir, perm|os.ModeDir|0110)
 	if err != nil {
 		return err
 	}
@@ -61,13 +60,13 @@ func CheckoutState(ctx context.Context, state *envelopes.State, targetDir string
 
 	for accName, accBal := range state.Accounts {
 		dirName := path.Join(accountsDir, accName)
-		err = os.MkdirAll(dirName, perm)
+		err = os.MkdirAll(dirName, perm|os.ModeDir|0110)
 		if err != nil {
 			return err
 		}
 
 		fileName := path.Join(dirName, cashName)
-		err = ioutil.WriteFile(fileName, []byte(accBal.String()), perm)
+		err = os.WriteFile(fileName, []byte(accBal.String()), perm)
 		if err != nil {
 			return err
 		}
@@ -78,7 +77,7 @@ func CheckoutState(ctx context.Context, state *envelopes.State, targetDir string
 	var processBudget func(context.Context, string, *envelopes.Budget) error
 
 	processBudget = func(ctx context.Context, location string, budget *envelopes.Budget) error {
-		err = os.MkdirAll(location, perm)
+		err = os.MkdirAll(location, perm|os.ModeDir|0110)
 		if err != nil {
 			return err
 		}

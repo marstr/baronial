@@ -216,7 +216,7 @@ var commitCmd = &cobra.Command{
 				logrus.Fatal("unable to read pending revert")
 			}
 
-			commitTransactionFromFlags.Reverts = revertParameters.Reverts[0]
+			commitTransactionFromFlags.Reverts = revertParameters.Reverts
 
 			if commitTransactionFromFlags.Comment == "" {
 				commitTransactionFromFlags.Comment = revertParameters.Comment
