@@ -23,6 +23,7 @@ import (
 	"io"
 	"path"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/marstr/envelopes"
@@ -68,8 +69,13 @@ func ConcisePrintTransaction(_ context.Context, output io.Writer, subject envelo
 			return err
 		}
 	}
-	if !subject.Reverts.Equal(envelopes.ID{}) {
-		_, err = fmt.Fprintf(output, "\tReverts:\t%s\n", subject.Reverts)
+	if len(subject.Reverts) > 0 {
+		strRevs := make([]string, len(subject.Reverts))
+		for i := range subject.Reverts {
+			strRevs[i] = subject.Reverts[i].String()
+		}
+
+		_, err = fmt.Fprintf(output, "\tReverts:\t%s\n", strings.Join(strRevs, ", "))
 		if err != nil {
 			return err
 		}
@@ -135,9 +141,15 @@ func PrettyPrintTransaction(
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(output, "Parent:  \t%s\n", subject.Parents[0])
+	_, err = fmt.Fprintf(output, "Parent:  \t%s\n", joinedIDStringList(subject.Parents, ", "))
 	if err != nil {
 		return err
+	}
+	if len(subject.Reverts) > 0 {
+		_, err = fmt.Fprintf(output, "Reverts: \t%s\n", joinedIDStringList(subject.Reverts, ", "))
+		if err != nil {
+			return err
+		}
 	}
 	_, err = fmt.Fprintf(output, "Comment: \t%s\n", subject.Comment)
 	if err != nil {
@@ -205,4 +217,12 @@ func flattenBudgets(diff envelopes.Impact) map[string]envelopes.Balance {
 	helper(diff.Budget, "", "")
 
 	return retval
+}
+
+func joinedIDStringList(subject []envelopes.ID, sep string) string {
+	strSub := make([]string, len(subject))
+	for i := range subject {
+		strSub[i] = subject[i].String()
+	}
+	return strings.Join(strSub, sep)
 }
