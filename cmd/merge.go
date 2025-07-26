@@ -50,9 +50,10 @@ var mergeCmd = &cobra.Command{
 		if err != nil {
 			logrus.Fatal(err)
 		}
+		repoLoc := filepath.Join(root, index.RepoName)
 
 		var repo persist.RepositoryReader
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, filepath.Join(root, index.RepoName), 10000)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, repoLoc, 10000)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -66,7 +67,7 @@ var mergeCmd = &cobra.Command{
 		heads := append([]persist.RefSpec{currentHead}, stringsToRefSpecs(args)...)
 
 		var inProg bool
-		inProg, err = MergeIsInProgress(ctx, root)
+		inProg, err = MergeIsInProgress(ctx, repoLoc)
 		if err != nil {
 			logrus.Warn("couldn't see if previous merge is in progress because: ", err)
 		}
@@ -74,7 +75,7 @@ var mergeCmd = &cobra.Command{
 		var mergeParams MergeParameters
 
 		if inProg {
-			err = MergeUnstowProgress(ctx, root, &mergeParams)
+			err = MergeUnstowProgress(ctx, repoLoc, &mergeParams)
 			if err != nil {
 				logrus.Fatal("couldn't read the currently in-progress merge because: ", err)
 			}
@@ -97,7 +98,7 @@ var mergeCmd = &cobra.Command{
 			string(mergeParams.ParentNames[0]),
 		)
 
-		err = MergeStowProgress(ctx, root, mergeParams)
+		err = MergeStowProgress(ctx, repoLoc, mergeParams)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -108,7 +109,7 @@ var mergeCmd = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		err = index.CheckoutState(ctx, &merged, root, 0660)
+		err = index.CheckoutState(ctx, &merged, repoLoc, 0660)
 		if err != nil {
 			logrus.Fatal(err)
 		}
