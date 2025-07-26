@@ -158,7 +158,7 @@ func MergeUnstowProgress(_ context.Context, repoLoc string, destination *MergePa
 }
 
 func MergeResetProgress(_ context.Context, repoLoc string) error {
-	return os.Remove(getRevertParamsLoc(repoLoc))
+	return os.Remove(getMergeParamsLoc(repoLoc))
 }
 
 func getMergeParamsLoc(repoLoc string) string {
