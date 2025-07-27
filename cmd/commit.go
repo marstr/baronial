@@ -31,6 +31,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/marstr/baronial/internal/index"
 )
@@ -140,6 +141,24 @@ var commitCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, _ []string) {
 		ctx, cancel := RootContext(cmd)
 		defer cancel()
+
+		commitTransactionFromFlags.Committer.FullName = viper.GetString("user.name")
+		commitTransactionFromFlags.Committer.Email = viper.GetString("user.email")
+
+		reqConfigMissing := false
+		if commitTransactionFromFlags.Committer.FullName == "" {
+			logrus.Error("config user.name is missing")
+			reqConfigMissing = true
+		}
+
+		if commitTransactionFromFlags.Committer.Email == "" {
+			logrus.Error("config user.email is missing")
+			reqConfigMissing = true
+		}
+
+		if reqConfigMissing {
+			logrus.Fatal(("one or more pieces of required configuration is missing."))
+		}
 
 		targetDir, err := index.RootDirectory(".")
 		if err != nil {
