@@ -127,6 +127,12 @@ func PrettyPrintTransaction(
 			return err
 		}
 	}
+	if !subject.Committer.Equal(envelopes.User{}) {
+		_, err = fmt.Fprintf(output, "Committer:    \t%s (%s)\n", subject.Committer.FullName, subject.Committer.Email)
+		if err != nil {
+			return err
+		}
+	}
 	_, err = fmt.Fprintf(output, "Merchant:\t%s\n", subject.Merchant)
 	if err != nil {
 		return err
