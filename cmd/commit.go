@@ -122,8 +122,11 @@ var commitCmd = &cobra.Command{
 				return err
 			}
 		} else {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
 			var err error
-			commitTransactionFromFlags.Amount, err = calculateAmount(rootContext, ".")
+			commitTransactionFromFlags.Amount, err = calculateAmount(ctx, ".")
 			if err != nil {
 				logrus.Fatalf("Failed to calculate the amount from %q because of the following error: %s", amountDefault, err)
 			}
