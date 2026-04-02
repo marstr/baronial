@@ -38,7 +38,7 @@ import (
 const (
 	amountFlag      = "amount"
 	amountShorthand = "a"
-	amountDefault   = "<calculated>"
+	amountDefault   = "<gross change>"
 	amountUsage     = "The magnitude of the transaction that should be displayed in logs."
 )
 
@@ -128,16 +128,6 @@ var commitCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-		} else {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			var err error
-			commitTransactionFromFlags.Amount, err = calculateAmount(ctx, ".")
-			if err != nil {
-				logrus.Fatalf("Failed to calculate the amount from %q because of the following error: %s", amountDefault, err)
-			}
-
 		}
 
 		commitTransactionFromFlags.EnteredTime = time.Now()
@@ -151,6 +141,14 @@ var commitCmd = &cobra.Command{
 		targetDir, err := index.RootDirectory(".")
 		if err != nil {
 			logrus.Fatal(err)
+		}
+
+		if !cmd.Flags().Changed(amountFlag) {
+			var err error
+			commitTransactionFromFlags.Amount, err = calculateAmount(ctx, ".")
+			if err != nil {
+				logrus.Fatalf("Failed to calculate the amount from %q because of the following error: %s", amountDefault, err)
+			}
 		}
 
 		commitTransactionFromFlags.State, err = index.LoadState(ctx, targetDir)
@@ -388,9 +386,6 @@ func promptToContinue(ctx context.Context, message string, output io.Writer, inp
 }
 
 func calculateAmount(ctx context.Context, targetDir string) (envelopes.Balance, error) {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
 	targetDir, err := index.RootDirectory(targetDir)
 	if err != nil {
 		return envelopes.Balance{}, err
