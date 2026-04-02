@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -32,6 +31,7 @@ import (
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 
+	"github.com/marstr/baronial/internal/format"
 	"github.com/marstr/baronial/internal/index"
 )
 
@@ -75,6 +75,13 @@ const (
 	forceShorthand = "f"
 	forceDefault   = false
 	forceUsage     = "Ignore warnings, commit the transaction anyway."
+)
+
+const (
+	dryrunFlag      = "dry-run"
+	dryrunShorthand = "d"
+	dryrunDefault   = false
+	dryrunUsage     = "Generates and prints a commit without writing it or updating any references."
 )
 
 const (
@@ -174,8 +181,8 @@ var commitCmd = &cobra.Command{
 				shouldContinue, err := promptToContinue(
 					ctx,
 					"proceed despite imbalance?",
-					os.Stdout,
-					os.Stdin)
+					cmd.OutOrStdout(),
+					cmd.InOrStdin())
 				if err != nil {
 					logrus.Fatal(err)
 				}
@@ -255,9 +262,43 @@ var commitCmd = &cobra.Command{
 		}
 		commitTransactionFromFlags.RecordID = envelopes.BankRecordID(rawRecordId)
 
-		err = persist.Commit(ctx, repo, commitTransactionFromFlags, additionalParents...)
+		var dryrun bool
+		dryrun, err = cmd.Flags().GetBool(dryrunFlag)
 		if err != nil {
 			logrus.Fatal(err)
+		}
+
+		if dryrun {
+			var head persist.RefSpec
+			head, err = repo.Current(ctx)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+
+			var parent envelopes.ID
+			if head != "" {
+				parent, err = persist.Resolve(ctx, repo, head)
+				if err != nil {
+					logrus.Fatal(err)
+				}
+			}
+
+			if parent.Equal(envelopes.ID{}) {
+				commitTransactionFromFlags.Parents = []envelopes.ID{}
+			} else {
+				commitTransactionFromFlags.Parents = append([]envelopes.ID{parent}, additionalParents...)
+			}
+
+			err = format.PrettyPrintTransaction(ctx, cmd.OutOrStdout(), repo, commitTransactionFromFlags)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+
+		} else {
+			err = persist.Commit(ctx, repo, commitTransactionFromFlags, additionalParents...)
+			if err != nil {
+				logrus.Fatal(err)
+			}
 		}
 	},
 }
@@ -272,6 +313,7 @@ func init() {
 	commitCmd.Flags().StringP(amountFlag, amountShorthand, amountDefault, amountUsage)
 	commitCmd.Flags().StringP(bankRecordIDFlag, bankRecordIDShorthand, bankRecordIDDefault, bankRecordIDUsage)
 	commitCmd.Flags().BoolP(forceFlag, forceShorthand, forceDefault, forceUsage)
+	commitCmd.Flags().BoolP(dryrunFlag, dryrunShorthand, dryrunDefault, dryrunUsage)
 }
 
 func promptToContinue(ctx context.Context, message string, output io.Writer, input io.Reader) (bool, error) {
