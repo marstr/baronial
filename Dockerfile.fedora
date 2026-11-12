@@ -2,7 +2,7 @@ ARG tag=38
 
 FROM fedora:${tag} AS rpm-builder
 
-RUN dnf install -y gcc rpm-build rpm-devel rpmlint make python bash coreutils diffutils patch rpmdevtools go perl
+RUN dnf install -y gcc rpm-build rpm-devel rpmlint make python bash coreutils diffutils patch rpmdevtools go perl git
 RUN rpmdev-setuptree
 
 WORKDIR /usr/src/baronial
