@@ -1,5 +1,9 @@
 name: Build
 
+env:
+  fedora_current: 44
+  fedora_previous: 43
+
 on:
   push:
     branches: [ main ]
@@ -56,7 +60,7 @@ jobs:
           name: Baronial Darwin
           path: bin/darwin/baronial
 
-  build-fedora44:
+  build-fedoraCurrent:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v2
@@ -64,16 +68,16 @@ jobs:
             fetch-depth: 0
         - name: Build
           run: |
-            make bin/linux/baronial.fc44.src.rpm bin/linux/baronial.fc44.x86_64.rpm
+            make bin/linux/baronial.fc${{ env.fedora_current }}.src.rpm bin/linux/baronial.fc${{ env.fedora_current }}.x86_64.rpm
         - uses: actions/upload-artifact@v4
           with:
-            name: baronial.fc44.src.rpm
-            path: bin/linux/baronial.fc44.src.rpm
+            name: baronial.fc${{ env.fedora_current }}.src.rpm
+            path: bin/linux/baronial.fc${{ env.fedora_current }}.src.rpm
         - uses: actions/upload-artifact@v4
           with:
-            name: baronial.fc44.x86_64.rpm
-            path: bin/linux/baronial.fc44.x86_64.rpm
-  build-fedora43:
+            name: baronial.fc${{ env.fedora_current }}.x86_64.rpm
+            path: bin/linux/baronial.fc${{ env.fedora_current }}.x86_64.rpm
+  build-fedoraPrevious:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -81,12 +85,12 @@ jobs:
           fetch-depth: 0
       - name: Build
         run: |
-          make bin/linux/baronial.fc43.src.rpm bin/linux/baronial.fc43.x86_64.rpm
+          make bin/linux/baronial.fc${{ env.fedora_previous }}.src.rpm bin/linux/baronial.fc${{ env.fedora_previous }}.x86_64.rpm
       - uses: actions/upload-artifact@v4
         with:
-          name: baronial.fc43.src.rpm
-          path: bin/linux/baronial.fc43.src.rpm
+          name: baronial.fc${{ env.fedora_previous }}.src.rpm
+          path: bin/linux/baronial.fc${{ env.fedora_previous }}.src.rpm
       - uses: actions/upload-artifact@v4
         with:
-          name: baronial.fc43.x86_64.rpm
-          path: bin/linux/baronial.fc43.x86_64.rpm
+          name: baronial.fc${{ env.fedora_previous }}.x86_64.rpm
+          path: bin/linux/baronial.fc${{ env.fedora_previous }}.x86_64.rpm
