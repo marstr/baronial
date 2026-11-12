@@ -1,8 +1,8 @@
 name: Build
 
 env:
-  fedora_current: 44
-  fedora_previous: 43
+  fedora_current: 45
+  fedora_previous: 44
 
 on:
   push:

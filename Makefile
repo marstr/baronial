@@ -2,8 +2,8 @@
 SRC = $(shell find . -name '*.go' -type f)
 TEST_SRC = $(shell find . -name '*_test.go' -type f)
 DOCKER?=docker
-FEDORA_CURRENT = 44
-FEDORA_PREVIOUS = 43
+FEDORA_CURRENT = 45
+FEDORA_PREVIOUS = 44
 
 # Define high-level build targets.
 .PHONY: all
