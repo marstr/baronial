@@ -2,6 +2,8 @@
 SRC = $(shell find . -name '*.go' -type f)
 TEST_SRC = $(shell find . -name '*_test.go' -type f)
 DOCKER?=docker
+FEDORA_CURRENT = 42
+FEDORA_PREVIOUS = 41
 
 # Define high-level build targets.
 .PHONY: all
@@ -17,16 +19,16 @@ darwin: bin/darwin/baronial.gz
 windows: bin/windows/baronial.exe
 
 .PHONY: docker
-docker: bin/docker/baronial-alpine.tar.gz bin/docker/baronial-debian.tar.gz bin/docker/baronial-fedora41.tar.gz bin/docker/baronial-fedora42.tar.gz bin/docker/baronial-el8.tar.gz
+docker: bin/docker/baronial-alpine.tar.gz bin/docker/baronial-debian.tar.gz bin/docker/baronial-fedora${FEDORA_CURRENT}.tar.gz bin/docker/baronial-fedora${FEDORA_PREVIOUS}.tar.gz bin/docker/baronial-el8.tar.gz
 
 .PHONY: fedora
-fedora: fedora41 fedora42
+fedora: fedora${FEDORA_CURRENT} fedora${FEDORA_PREVIOUS}
 
-.PHONY: fedora41
-fedora41: bin/linux/baronial.fc41.src.rpm bin/linux/baronial.fc41.x86_64.rpm bin/docker/baronial-fedora41.tar.gz
+.PHONY: fedora${FEDORA_CURRENT}
+fedora${FEDORA_CURRENT}: bin/linux/baronial.fc${FEDORA_CURRENT}.src.rpm bin/linux/baronial.fc${FEDORA_CURRENT}.x86_64.rpm bin/docker/baronial-fedora${FEDORA_CURRENT}.tar.gz
 
-.PHONY: fedora42
-fedora42: bin/linux/baronial.fc42.src.rpm bin/linux/baronial.fc42.x86_64.rpm bin/docker/baronial-fedora42.tar.gz
+.PHONY: fedora${FEDORA_PREVIOUS}
+fedora${FEDORA_PREVIOUS}: bin/linux/baronial.fc${FEDORA_PREVIOUS}.src.rpm bin/linux/baronial.fc${FEDORA_PREVIOUS}.x86_64.rpm bin/docker/baronial-fedora${FEDORA_PREVIOUS}.tar.gz
 
 .PHONY: el8
 el8: bin/linux/baronial.el8.src.rpm bin/linux/baronial.el8.x86_64.rpm bin/docker/baronial-el8.tar.gz
@@ -38,7 +40,7 @@ opensuse: bin/linux/baronial.lp153.src.rpm bin/linux/baronial.lp153.x86_64.rpm b
 alpine: bin/docker/baronial-alpine.tar.gz
 
 .PHONY: rpm
-rpm: bin/linux/baronial.fc41.src.rpm bin/linux/baronial.fc42.x86_64.rpm bin/linux/baronial.fc41.src.rpm bin/linux/baronial.fc42.x86_64.rpm bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/linux/baronial.el8.x86_64.rpm bin/linux/baronial.el8.src.rpm
+rpm: bin/linux/baronial.fc${FEDORA_CURRENT}.src.rpm bin/linux/baronial.fc${FEDORA_CURRENT}.x86_64.rpm bin/linux/baronial.fc${FEDORA_PREVIOUS}.src.rpm bin/linux/baronial.fc${FEDORA_PREVIOUS}.x86_64.rpm bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/linux/baronial.el8.x86_64.rpm bin/linux/baronial.el8.src.rpm
 
 version.txt: ${SRC} go.sum
 	perl ./get-version.pl > version.txt
@@ -78,33 +80,33 @@ bin/docker/baronial-debian.tar.gz: ${SRC} Dockerfile.debian
 	${DOCKER} build -t marstr/baronial:debian -f Dockerfile.debian .
 	${DOCKER} save marstr/baronial:debian | gzip > bin/docker/baronial-debian.tar.gz
 
-bin/docker/baronial-fedora41.tar.gz: ${SRC} Dockerfile.fedora
+bin/docker/baronial-fedora${FEDORA_CURRENT}.tar.gz: ${SRC} Dockerfile.fedora
 	mkdir -p bin/docker
-	${DOCKER} build --build-arg tag=41 -t marstr/baronial:fedora41-rpm-builder -f Dockerfile.fedora --target rpm-builder .
-	${DOCKER} build --build-arg tag=41 -t marstr/baronial:fedora41 -f Dockerfile.fedora .
-	${DOCKER} save marstr/baronial:fedora41 | gzip > bin/docker/baronial-fedora41.tar.gz
+	${DOCKER} build --build-arg tag=${FEDORA_CURRENT} -t marstr/baronial:fedora${FEDORA_CURRENT}-rpm-builder -f Dockerfile.fedora --target rpm-builder .
+	${DOCKER} build --build-arg tag=${FEDORA_CURRENT} -t marstr/baronial:fedora${FEDORA_CURRENT} -f Dockerfile.fedora .
+	${DOCKER} save marstr/baronial:fedora${FEDORA_CURRENT} | gzip > bin/docker/baronial-fedora${FEDORA_CURRENT}.tar.gz
 
-bin/linux/baronial.fc41.src.rpm: bin/docker/baronial-fedora41.tar.gz version.txt
+bin/linux/baronial.fc${FEDORA_CURRENT}.src.rpm: bin/docker/baronial-fedora${FEDORA_CURRENT}.tar.gz version.txt
 	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:fedora41-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc41.src.rpm > bin/linux/baronial.fc41.src.rpm
+	${DOCKER} run --rm marstr/baronial:fedora${FEDORA_CURRENT}-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc${FEDORA_CURRENT}.src.rpm > bin/linux/baronial.fc${FEDORA_CURRENT}.src.rpm
 
-bin/linux/baronial.fc41.x86_64.rpm: bin/docker/baronial-fedora41.tar.gz version.txt
+bin/linux/baronial.fc${FEDORA_CURRENT}.x86_64.rpm: bin/docker/baronial-fedora${FEDORA_CURRENT}.tar.gz version.txt
 	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:fedora41-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc41.x86_64.rpm > bin/linux/baronial.fc41.x86_64.rpm
+	${DOCKER} run --rm marstr/baronial:fedora${FEDORA_CURRENT}-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc${FEDORA_CURRENT}.x86_64.rpm > bin/linux/baronial.fc${FEDORA_CURRENT}.x86_64.rpm
 
-bin/docker/baronial-fedora42.tar.gz: ${SRC} Dockerfile.fedora
+bin/docker/baronial-fedora${FEDORA_PREVIOUS}.tar.gz: ${SRC} Dockerfile.fedora
 	mkdir -p bin/docker
-	${DOCKER} build --build-arg tag=42 -t marstr/baronial:fedora42-rpm-builder -f Dockerfile.fedora --target rpm-builder .
-	${DOCKER} build --build-arg tag=42 -t marstr/baronial:fedora42 -f Dockerfile.fedora .
-	${DOCKER} save marstr/baronial:fedora42 | gzip > bin/docker/baronial-fedora42.tar.gz
+	${DOCKER} build --build-arg tag=${FEDORA_PREVIOUS} -t marstr/baronial:fedora${FEDORA_PREVIOUS}-rpm-builder -f Dockerfile.fedora --target rpm-builder .
+	${DOCKER} build --build-arg tag=${FEDORA_PREVIOUS} -t marstr/baronial:fedora${FEDORA_PREVIOUS} -f Dockerfile.fedora .
+	${DOCKER} save marstr/baronial:fedora${FEDORA_PREVIOUS} | gzip > bin/docker/baronial-fedora${FEDORA_PREVIOUS}.tar.gz
 
-bin/linux/baronial.fc42.src.rpm: bin/docker/baronial-fedora42.tar.gz version.txt
+bin/linux/baronial.fc${FEDORA_PREVIOUS}.src.rpm: bin/docker/baronial-fedora${FEDORA_PREVIOUS}.tar.gz version.txt
 	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:fedora42-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc42.src.rpm > bin/linux/baronial.fc42.src.rpm
+	${DOCKER} run --rm marstr/baronial:fedora${FEDORA_PREVIOUS}-rpm-builder cat /root/rpmbuild/SRPMS/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc${FEDORA_PREVIOUS}.src.rpm > bin/linux/baronial.fc${FEDORA_PREVIOUS}.src.rpm
 
-bin/linux/baronial.fc42.x86_64.rpm: bin/docker/baronial-fedora42.tar.gz version.txt
+bin/linux/baronial.fc${FEDORA_PREVIOUS}.x86_64.rpm: bin/docker/baronial-fedora${FEDORA_PREVIOUS}.tar.gz version.txt
 	mkdir -p bin/linux
-	${DOCKER} run --rm marstr/baronial:fedora42-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc42.x86_64.rpm > bin/linux/baronial.fc42.x86_64.rpm
+	${DOCKER} run --rm marstr/baronial:fedora${FEDORA_PREVIOUS}-rpm-builder cat /root/rpmbuild/RPMS/x86_64/baronial-$$(cat ./version.txt | ./packaging/redhat/redhatify-version.pl)-1.fc${FEDORA_PREVIOUS}.x86_64.rpm > bin/linux/baronial.fc${FEDORA_PREVIOUS}.x86_64.rpm
 
 bin/docker/baronial-el8.tar.gz: ${SRC} Dockerfile.rhel
 	mkdir -p bin/docker
@@ -175,12 +177,11 @@ clean:
 	rm -rf .semaphores
 	${DOCKER} rmi -f marstr/baronial:debian 2>/dev/null || echo 'Skipping Debian Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:alpine 2>/dev/null || echo 'Skipping Alpine Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora41-rpm-builder 2>/dev/null || echo 'Skipping Fedora 41 RPM Builder Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora41 2>/dev/null || echo 'Skipping Fedora 41 Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora42-rpm-builder 2>/dev/null || echo 'Skipping Fedora 42 RPM Builder Docker Image Delete' > /dev/stderr
-	${DOCKER} rmi -f marstr/baronial:fedora42 2>/dev/null || echo 'Skipping Fedora 42 Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora${FEDORA_CURRENT}-rpm-builder 2>/dev/null || echo 'Skipping Fedora ${FEDORA_CURRENT} RPM Builder Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora${FEDORA_CURRENT} 2>/dev/null || echo 'Skipping Fedora ${FEDORA_CURRENT} Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora${FEDORA_PREVIOUS}-rpm-builder 2>/dev/null || echo 'Skipping Fedora ${FEDORA_PREVIOUS} RPM Builder Docker Image Delete' > /dev/stderr
+	${DOCKER} rmi -f marstr/baronial:fedora${FEDORA_PREVIOUS} 2>/dev/null || echo 'Skipping Fedora ${FEDORA_PREVIOUS} Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:leap153-rpm-builder 2>/dev/null || echo 'Skipping openSUSE Leap 15.3 RPM Builder Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:leap153 2>/dev/null || echo 'Skipping openSUSE Leap 15.3 Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:el8-rpm-builder 2>/dev/null || echo 'Skipping Enterprise Linux 8 RPM Build Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:el8 2>/dev/null || echo 'Skipping Enterprise Linux 8 Docker Image Delete' > /dev/null
-
