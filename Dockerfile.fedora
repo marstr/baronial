@@ -1,4 +1,4 @@
-ARG tag=38
+ARG tag=45
 
 FROM fedora:${tag} AS rpm-builder
 
