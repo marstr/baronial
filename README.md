@@ -172,34 +172,12 @@ that touched that account.
 
 ### Debian and Ubuntu
 
-Download and extract the **Baronial Debian** build artifact, then install its
-binary package (no Go toolchain required):
+Open the latest successful [Build run on `main`](https://github.com/marstr/baronial/actions/workflows/build.yml?query=branch%3Amain+is%3Asuccess),
+download and extract the **Baronial Debian** artifact, then install the `.deb`:
 
 ``` bash
 sudo apt install ./baronial_*_amd64.deb
 ```
-
-To build packages locally, set up the normal source-build prerequisites below
-and install Docker and Make, then run `make deb`.
-Packages are written to `bin/debian/`: the `.deb` binary package, and the `.dsc`,
-`.orig.tar.gz`, and `.debian.tar.xz` files that together form the source package.
-The source package includes vendored Go dependencies for offline builds.
-`make test-deb` also checks the runtime image and rebuilds the source package
-with networking disabled.
-
-To rebuild a downloaded source package on Debian Trixie or newer (Go 1.24+):
-
-``` bash
-sudo apt install build-essential debhelper golang-any
-dpkg-source -x baronial_*.dsc
-cd baronial-*/
-dpkg-buildpackage -us -uc -b
-```
-
-Both the GitHub Actions build and `azure-pipelines.yml` publish source and binary
-packages on `main` and `master` builds. The Docker build produces
-`marstr/baronial:debian-deb-builder` and `marstr/baronial:debian`; the latter
-installs the generated `.deb`.
 
 ### Build from Source
 
