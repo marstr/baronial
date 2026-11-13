@@ -1,0 +1,25 @@
+#!/usr/bin/make -f
+
+export CGO_ENABLED=0
+export GOFLAGS=-mod=vendor
+export GOPROXY=off
+export GOTOOLCHAIN=local
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	go build -trimpath -ldflags "-s -w -X github.com/marstr/baronial/cmd.revision=$$(cat revision.txt) -X github.com/marstr/baronial/cmd.version=$$(cat version.txt)" -o bin/linux/baronial .
+
+override_dh_auto_test:
+	go test ./...
+
+override_dh_auto_install:
+	install -D -m 755 bin/linux/baronial debian/baronial/usr/bin/baronial
+
+override_dh_installdocs:
+	dh_installdocs
+	cd vendor && find . -type f \( -iname 'license*' -o -iname 'copying*' -o -iname 'notice*' -o -iname 'copyright*' \) -exec install -D -m 644 '{}' '../debian/baronial/usr/share/doc/baronial/vendor/{}' \;
+
+override_dh_auto_clean:
+	rm -rf bin

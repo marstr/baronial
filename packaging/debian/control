@@ -1,0 +1,14 @@
+Source: baronial
+Section: utils
+Priority: optional
+Maintainer: Baronial maintainers <marstr@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13), golang-any (>= 1.24~)
+Standards-Version: 4.7.0
+Homepage: https://github.com/marstr/baronial
+Rules-Requires-Root: no
+
+Package: baronial
+Architecture: any
+Depends: ${misc:Depends}
+Description: Scriptable personal finance tooling
+ Command line budgeting application using envelope accounting.

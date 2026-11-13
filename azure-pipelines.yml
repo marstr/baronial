@@ -1,0 +1,18 @@
+trigger:
+  branches:
+    include:
+      - master
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+    fetchDepth: 0
+    fetchTags: true
+  - script: make test-deb
+    displayName: Build and test Debian packages
+  - publish: bin/debian
+    artifact: baronial-debian
+    displayName: Publish Debian source and binary packages

@@ -1,0 +1,15 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: baronial
+Source: https://github.com/marstr/baronial
+
+Files: *
+Copyright: 2019 Martin Strobel and contributors
+License: GPL-3+
+ On Debian systems, the full license text is available in
+ /usr/share/common-licenses/GPL-3.
+
+Files: vendor/*
+Copyright: respective upstream contributors
+License: upstream
+ Vendored dependencies retain their respective copyright notices and
+ license texts in the vendor directory of the source package.
