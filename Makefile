@@ -64,7 +64,7 @@ bin/linux/baronial.gz: bin/linux/baronial
 	gzip -kf bin/linux/baronial
 
 bin/linux/baronial-%.rpm: ${SRC} go.sum version.txt packaging/redhat/baronial.spec packaging/redhat/redhatify-version.pl
-	docker build -t mars
+	${DOCKER} build -t mars
 
 bin/windows/baronial.exe: ${SRC} go.sum version.txt revision.txt
 	mkdir -p bin/windows
