@@ -98,7 +98,7 @@ func PrettyPrintTransaction(
 	var err error
 	var impacts envelopes.Impact
 
-	if subject.Parents[0].Equal(envelopes.ID{}) {
+	if len(subject.Parents) == 0 || subject.Parents[0].Equal(envelopes.ID{}) {
 		impacts = envelopes.Impact(*subject.State)
 	} else {
 		var parent envelopes.Transaction
