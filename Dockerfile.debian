@@ -1,7 +1,9 @@
-ARG tag=buster
+ARG tag=trixie
 
-FROM debian:${tag} AS builder
-RUN apt update; apt install -y golang perl make git
+FROM debian:${tag} AS deb-builder
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends golang-any build-essential perl make git ca-certificates debhelper dpkg-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/local/src/baronial
 
@@ -11,12 +13,26 @@ RUN go mod download
 
 COPY . .
 
-RUN make bin/linux/baronial
+RUN make baronial.tar.gz && \
+    go mod vendor && \
+    mkdir -p /build/baronial /packages && \
+    tar -xzf baronial.tar.gz -C /build/baronial --strip-components=1 && \
+    cp -r vendor /build/baronial/ && \
+    version=$(sed -e 's/^[vV]//' -e 's/-/~/g' version.txt) && \
+    tar -czf /build/baronial_${version}.orig.tar.gz -C /build baronial && \
+    cp -r packaging/debian /build/baronial/debian && \
+    printf 'baronial (%s-1) unstable; urgency=medium\n\n  * Build from upstream source.\n\n -- Baronial maintainers <marstr@users.noreply.github.com>  %s\n' \
+        "${version}" "$(date -R)" > /build/baronial/debian/changelog && \
+    cd /build/baronial && \
+    dpkg-buildpackage --build=full -us -uc && \
+    cp /build/baronial_* /packages/
 
 CMD /bin/bash
 
 FROM debian:${tag} AS execution
 
-COPY --from=builder /usr/local/src/baronial/bin/linux/baronial /usr/local/bin/
+COPY --from=deb-builder /packages/*.deb /tmp/
+
+RUN dpkg -i /tmp/*.deb && rm /tmp/*.deb
 
 CMD /bin/bash

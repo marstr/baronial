@@ -12,6 +12,27 @@ on:
       - created
 
 jobs:
+  build-debian:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Build and test Debian packages
+        run: make test-deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Baronial Debian
+          path: |
+            bin/debian/*.deb
+            bin/debian/*.dsc
+            bin/debian/*.tar.*
+            bin/debian/*.changes
+            bin/debian/*.buildinfo
+          if-no-files-found: error
+
   build-linux:
     runs-on: ubuntu-latest
     steps:

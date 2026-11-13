@@ -170,6 +170,15 @@ Providing the extra parameter `accounts/us_bank/checking` will filter the transa
 that touched that account. 
 ## Install
 
+### Debian and Ubuntu
+
+Open the latest successful [Build run on `main`](https://github.com/marstr/baronial/actions/workflows/build.yml?query=branch%3Amain+is%3Asuccess),
+download and extract the **Baronial Debian** artifact, then install the `.deb`:
+
+``` bash
+sudo apt install ./baronial_*_amd64.deb
+```
+
 ### Build from Source
 
 > NOTE: To build from source, you'll need Go 1.23 or greater, perl, and Git. See [CONTRIBUTING.md](./CONTRIBUTING.md) for

@@ -7,7 +7,7 @@ FEDORA_PREVIOUS = 44
 
 # Define high-level build targets.
 .PHONY: all
-all: darwin linux windows test lint docker rpm
+all: darwin linux windows test lint docker rpm deb
 
 .PHONY: linux
 linux: bin/linux/baronial.gz
@@ -42,6 +42,21 @@ alpine: bin/docker/baronial-alpine.tar.gz
 .PHONY: rpm
 rpm: bin/linux/baronial.fc${FEDORA_CURRENT}.src.rpm bin/linux/baronial.fc${FEDORA_CURRENT}.x86_64.rpm bin/linux/baronial.fc${FEDORA_PREVIOUS}.src.rpm bin/linux/baronial.fc${FEDORA_PREVIOUS}.x86_64.rpm bin/linux/baronial.lp151.src.rpm bin/linux/baronial.lp151.x86_64.rpm bin/linux/baronial.el8.x86_64.rpm bin/linux/baronial.el8.src.rpm
 
+.PHONY: deb
+deb: bin/debian/.built
+
+.PHONY: test-deb
+test-deb: deb
+	${DOCKER} run --rm --network none marstr/baronial:debian-deb-builder bash packaging/test-debian-packages.sh /packages
+	${DOCKER} run --rm --network none marstr/baronial:debian baronial --help
+
+bin/debian/.built: bin/docker/baronial-debian.tar.gz
+	mkdir -p bin/debian
+	set -e; container=$$(${DOCKER} create marstr/baronial:debian-deb-builder); \
+		trap '${DOCKER} rm -f "$$container" > /dev/null' EXIT; \
+		${DOCKER} cp "$$container:/packages/." bin/debian/
+	touch $@
+
 version.txt: ${SRC} go.sum
 	perl ./get-version.pl > version.txt
 
@@ -75,8 +90,9 @@ bin/docker/baronial-alpine.tar.gz: ${SRC} Dockerfile.alpine
 	${DOCKER} build -t marstr/baronial:alpine -f Dockerfile.alpine .
 	${DOCKER} save marstr/baronial:alpine | gzip > bin/docker/baronial-alpine.tar.gz
 
-bin/docker/baronial-debian.tar.gz: ${SRC} Dockerfile.debian
+bin/docker/baronial-debian.tar.gz: ${SRC} go.mod go.sum Dockerfile.debian $(shell find packaging/debian -type f) packaging/test-debian-packages.sh archive-src.sh version.txt revision.txt
 	mkdir -p bin/docker
+	${DOCKER} build -t marstr/baronial:debian-deb-builder -f Dockerfile.debian --target deb-builder .
 	${DOCKER} build -t marstr/baronial:debian -f Dockerfile.debian .
 	${DOCKER} save marstr/baronial:debian | gzip > bin/docker/baronial-debian.tar.gz
 
@@ -175,6 +191,7 @@ clean:
 	rm -rf bin
 	rm -f revision.txt version.txt baronial.tar.gz
 	rm -rf .semaphores
+	${DOCKER} rmi -f marstr/baronial:debian-deb-builder 2>/dev/null || echo 'Skipping Debian Package Builder Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:debian 2>/dev/null || echo 'Skipping Debian Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:alpine 2>/dev/null || echo 'Skipping Alpine Docker Image Delete' > /dev/stderr
 	${DOCKER} rmi -f marstr/baronial:fedora${FEDORA_CURRENT}-rpm-builder 2>/dev/null || echo 'Skipping Fedora ${FEDORA_CURRENT} RPM Builder Docker Image Delete' > /dev/stderr
