@@ -9,6 +9,33 @@ import (
 	"time"
 )
 
+func Test_commitAmountFlagErrorNamesFlag(t *testing.T) {
+	const badAmount = "2020-01-01T10:00:00"
+	flag := commitCmd.Flags().Lookup(amountFlag)
+	if flag == nil {
+		t.Fatalf("flag %q is not defined", amountFlag)
+	}
+	prevValue, prevChanged := flag.Value.String(), flag.Changed
+	defer func() {
+		if err := flag.Value.Set(prevValue); err != nil {
+			t.Errorf("restoring flag %q: %v", amountFlag, err)
+		}
+		flag.Changed = prevChanged
+	}()
+	if err := flag.Value.Set(badAmount); err != nil {
+		t.Fatal(err)
+	}
+	flag.Changed = true
+
+	err := commitCmd.Args(commitCmd, []string{})
+	if err == nil {
+		t.Fatalf("expected an error for invalid amount %q, got nil", badAmount)
+	}
+	if msg := err.Error(); !strings.Contains(msg, amountFlag) || !strings.Contains(msg, badAmount) {
+		t.Errorf("expected error to mention %q and %q, got: %v", amountFlag, badAmount, msg)
+	}
+}
+
 func Test_promptToContinue(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
