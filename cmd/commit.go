@@ -126,7 +126,7 @@ var commitCmd = &cobra.Command{
 			}
 			commitTransactionFromFlags.Amount, err = envelopes.ParseBalance([]byte(rawAmount))
 			if err != nil {
-				return err
+				return fmt.Errorf("unable to parse amount from %q because: %v", rawAmount, err)
 			}
 		}
 
