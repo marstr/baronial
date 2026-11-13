@@ -53,7 +53,11 @@ var balanceCmd = &cobra.Command{
 			targetDir = "."
 		}
 
-		var err error
+		depth, err := cmd.Flags().GetUint8(balanceDepthFlag)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+
 		targetDir, err = filepath.Abs(targetDir)
 		if err != nil {
 			logrus.Fatal(err)
@@ -102,7 +106,7 @@ var balanceCmd = &cobra.Command{
 		if budgetDir != "" {
 			bdg, err := index.LoadBudget(ctx, budgetDir)
 			if err == nil {
-				err = writeBudgetBalances(ctx, os.Stdout, *bdg)
+				err = writeBudgetBalances(ctx, os.Stdout, *bdg, depth)
 				if err != nil {
 					logrus.Fatal(err)
 				}
@@ -136,7 +140,7 @@ func init() {
 	)
 }
 
-func writeBudgetBalances(_ context.Context, output io.Writer, budget envelopes.Budget) (err error) {
+func writeBudgetBalances(_ context.Context, output io.Writer, budget envelopes.Budget, depth uint8) (err error) {
 	_, err = fmt.Fprintln(output, "Total: ", budget.RecursiveBalance())
 	if err != nil {
 		return
@@ -146,21 +150,34 @@ func writeBudgetBalances(_ context.Context, output io.Writer, budget envelopes.B
 		return
 	}
 
-	if len(budget.Children) > 0 {
+	if depth > 0 && len(budget.Children) > 0 {
 		_, err = fmt.Fprintln(output, "Children:")
 		if err != nil {
 			return
 		}
 
-		childNames := make([]string, 0, len(budget.Children))
-		for name := range budget.Children {
-			childNames = append(childNames, name)
-		}
-		sort.Strings(childNames)
+		err = writeBudgetChildren(output, budget, depth, "\t")
+	}
+	return
+}
 
-		for _, name := range childNames {
-			child := budget.Children[name]
-			_, err = fmt.Fprintf(output, "\t%s: %s\n", name, child.RecursiveBalance())
+// writeBudgetChildren writes the children of budget, sorted by name, descending up to depth levels.
+func writeBudgetChildren(output io.Writer, budget envelopes.Budget, depth uint8, indent string) (err error) {
+	childNames := make([]string, 0, len(budget.Children))
+	for name := range budget.Children {
+		childNames = append(childNames, name)
+	}
+	sort.Strings(childNames)
+
+	for _, name := range childNames {
+		child := budget.Children[name]
+		_, err = fmt.Fprintf(output, "%s%s: %s\n", indent, name, child.RecursiveBalance())
+		if err != nil {
+			return
+		}
+
+		if depth > 1 && len(child.Children) > 0 {
+			err = writeBudgetChildren(output, *child, depth-1, indent+"\t")
 			if err != nil {
 				return
 			}
