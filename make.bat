@@ -1,3 +1,9 @@
+where perl >nul 2>nul
+if errorlevel 1 (
+    echo Error: Perl is required to build Baronial. Install Perl and ensure it is available on PATH.
+    exit /b 1
+)
+
 perl .\get-version.pl > version.txt
 perl .\get-revision.pl > revision.txt
 
