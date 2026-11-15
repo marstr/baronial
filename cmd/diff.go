@@ -78,6 +78,16 @@ func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envel
 		if err != nil {
 			return nil, err
 		}
+
+		// A zero ID represents the initial state of an empty repository. There is
+		// no transaction object to load until the first commit is created.
+		if targetID.Equal(envelopes.ID{}) {
+			return &envelopes.State{
+				Budget:   &envelopes.Budget{},
+				Accounts: make(envelopes.Accounts),
+			}, nil
+		}
+
 		var target envelopes.Transaction
 		err = repo.LoadTransaction(ctx, targetID, &target)
 		if err != nil {
