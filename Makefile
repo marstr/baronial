@@ -64,7 +64,9 @@ bin/linux/baronial.gz: bin/linux/baronial
 	gzip -kf bin/linux/baronial
 
 bin/linux/baronial-%.rpm: ${SRC} go.sum version.txt packaging/redhat/baronial.spec packaging/redhat/redhatify-version.pl
-	${DOCKER} build -t mars
+	mkdir -p $(@D)
+	${DOCKER} build --build-arg tag=${FEDORA_CURRENT} --target rpm-builder -t mars -f Dockerfile.fedora .
+	${DOCKER} run --rm mars sh -c 'cat /root/rpmbuild/RPMS/x86_64/baronial-*.rpm' > $@
 
 bin/windows/baronial.exe: ${SRC} go.sum version.txt revision.txt
 	mkdir -p bin/windows
