@@ -116,15 +116,16 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".baronial" (without extension).
+		// Search config in home directory with name ".baronialconf" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".baronial")
+		viper.SetConfigName(".baronialconf")
+		viper.SetConfigType("yaml")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		logrus.Info("Using config file:", viper.ConfigFileUsed())
 	}
 }
