@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +27,10 @@ func init() {
 }
 
 func RunBringTo(cmd *cobra.Command, args []string) error {
-	ctx, cancel := RootContext(cmd)
+	ctx, cancel, err := RootContext(cmd)
+	if err != nil {
+		return err
+	}
 	defer cancel()
 
 	desiredBal, err := envelopes.ParseBalance([]byte(args[0]))
@@ -52,7 +54,7 @@ func RunBringTo(cmd *cobra.Command, args []string) error {
 	var useImmediate bool
 	useImmediate, err = cmd.Flags().GetBool(bringToImmediateFlag)
 	if err != nil {
-		logrus.Fatal(err)
+		return err
 	}
 
 	if useImmediate {

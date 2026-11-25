@@ -25,11 +25,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/marstr/baronial/internal/diagnostics"
 	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -42,26 +42,29 @@ type MergeParameters struct {
 var mergeCmd = &cobra.Command{
 	Use:  "merge {refspec} [refspec]...",
 	Args: cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		root, err := index.RootDirectory(".")
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 		repoLoc := filepath.Join(root, index.RepoName)
 
 		var repo persist.RepositoryReader
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, repoLoc, 10000)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, repoLoc, 10000, filesystem.RepositoryLogger(diagnostics.Logger(ctx).With("component", "envelopes")))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var currentHead persist.RefSpec
 		currentHead, err = repo.Current(ctx)
 		if err != nil {
-			logrus.Fatal("couldn't read what's currently checked out because: ", err)
+			return fmt.Errorf("couldn't read what's currently checked out: %w", err)
 		}
 
 		heads := append([]persist.RefSpec{currentHead}, stringsToRefSpecs(args)...)
@@ -69,7 +72,8 @@ var mergeCmd = &cobra.Command{
 		var inProg bool
 		inProg, err = MergeIsInProgress(ctx, repoLoc)
 		if err != nil {
-			logrus.Warn("couldn't see if previous merge is in progress because: ", err)
+			warnCommand(cmd, fmt.Sprintf("couldn't see if previous merge is in progress because: %v", err))
+			diagnostics.Logger(ctx).DebugContext(ctx, "merge progress check failed", "error", err)
 		}
 
 		var mergeParams MergeParameters
@@ -77,7 +81,7 @@ var mergeCmd = &cobra.Command{
 		if inProg {
 			err = MergeUnstowProgress(ctx, repoLoc, &mergeParams)
 			if err != nil {
-				logrus.Fatal("couldn't read the currently in-progress merge because: ", err)
+				return fmt.Errorf("couldn't read the currently in-progress merge: %w", err)
 			}
 		}
 
@@ -86,7 +90,7 @@ var mergeCmd = &cobra.Command{
 			var id envelopes.ID
 			id, err = persist.Resolve(ctx, repo, head)
 			if err != nil {
-				logrus.Fatalf("couldn't resolve head %q because: %v", head, err)
+				return fmt.Errorf("couldn't resolve head %q: %w", head, err)
 			}
 
 			mergeParams.Parents = append(mergeParams.Parents, id)
@@ -100,21 +104,22 @@ var mergeCmd = &cobra.Command{
 
 		err = MergeStowProgress(ctx, repoLoc, mergeParams)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var merged envelopes.State
 		merged, err = persist.Merge(ctx, repo, heads)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		err = index.CheckoutState(ctx, &merged, repoLoc, 0660)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
-		fmt.Println("Merge complete. Please check balances for accuracy, make any necessary reverts, and commit.")
+		_, err = fmt.Fprintln(cmd.OutOrStdout(), "Merge complete. Please check balances for accuracy, make any necessary reverts, and commit.")
+		return err
 	},
 }
 

@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/marstr/baronial/internal/diagnostics"
 	"os"
 	"path/filepath"
 
@@ -27,7 +28,6 @@ import (
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -49,56 +49,60 @@ complicates all future tools and many may not do a good job. If you
 accidentally reverted a transaction, just commit a new transaction that is
 identical to the original.`,
 	Args: cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		root, err := index.RootDirectory(".")
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		repoLoc := filepath.Join(root, index.RepoName)
 		var repo persist.RepositoryReaderWriter
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, repoLoc, 10000)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, repoLoc, 10000, filesystem.RepositoryLogger(diagnostics.Logger(ctx).With("component", "envelopes")))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		id, err := persist.Resolve(ctx, repo, persist.RefSpec(args[0]))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var toRevert envelopes.Transaction
 		err = repo.LoadTransaction(ctx, id, &toRevert)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var delta envelopes.Impact
 		delta, err = persist.LoadImpact(ctx, repo, toRevert)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var balances *envelopes.State
 		balances, err = index.LoadState(ctx, root)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		updated := envelopes.State(balances.Add(envelopes.State(delta.Negate())))
 
 		err = index.CheckoutState(ctx, &updated, root, 0660)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var inProg bool
 		inProg, err = RevertIsInProgress(ctx, repoLoc)
 		if err != nil {
-			logrus.Warn("couldn't see if previous revert was in progress because: ", err)
+			warnCommand(cmd, fmt.Sprintf("couldn't see if previous revert was in progress because: %v", err))
+			diagnostics.Logger(ctx).DebugContext(ctx, "revert progress check failed", "error", err)
 		}
 
 		var revertParams RevertParameters
@@ -106,7 +110,7 @@ identical to the original.`,
 		if inProg {
 			err = RevertUnstowProgress(ctx, repoLoc, &revertParams)
 			if err != nil {
-				logrus.Fatal("couldn't read the currently in-progress revert because: ", err)
+				return fmt.Errorf("couldn't read the currently in-progress revert: %w", err)
 			}
 		}
 
@@ -115,11 +119,11 @@ identical to the original.`,
 
 		err = RevertStowProgress(ctx, repoLoc, revertParams)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Unable to stow revert information. Please reset to the last known good state.")
-			logrus.Fatal(err)
+			return fmt.Errorf("Unable to stow revert information. Please reset to the last known good state.\n%w", err)
 		}
 
-		fmt.Printf("Undid the effects of transaction %s. Please check current balances for accuracy, make any necessary edits, then commit.", id)
+		_, err = fmt.Fprintf(cmd.OutOrStdout(), "Undid the effects of transaction %s. Please check current balances for accuracy, make any necessary edits, then commit.", id)
+		return err
 	},
 }
 

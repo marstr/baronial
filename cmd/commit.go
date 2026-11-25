@@ -18,7 +18,9 @@ package cmd
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
+	"github.com/marstr/baronial/internal/diagnostics"
 	"io"
 	"path/filepath"
 	"strings"
@@ -27,7 +29,6 @@ import (
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 
@@ -134,26 +135,29 @@ var commitCmd = &cobra.Command{
 
 		return cobra.NoArgs(cmd, args)
 	},
-	Run: func(cmd *cobra.Command, _ []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, _ []string) (result error) {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		targetDir, err := index.RootDirectory(".")
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		if !cmd.Flags().Changed(amountFlag) {
 			var err error
 			commitTransactionFromFlags.Amount, err = calculateAmount(ctx, ".")
 			if err != nil {
-				logrus.Fatalf("Failed to calculate the amount from %q because of the following error: %s", amountDefault, err)
+				return fmt.Errorf("failed to calculate the amount from %q: %w", amountDefault, err)
 			}
 		}
 
 		commitTransactionFromFlags.State, err = index.LoadState(ctx, targetDir)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		budgetBal := commitTransactionFromFlags.State.Budget.RecursiveBalance()
@@ -165,15 +169,15 @@ var commitCmd = &cobra.Command{
 		var force bool
 		force, err = cmd.Flags().GetBool(forceFlag)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		if !budgetBal.Equal(accountsBal) {
-			logrus.Warnf(
+			warnCommand(cmd, fmt.Sprintf(
 				"accounts (%s) and budget (%s) balance are not equal by %s.",
 				accountsBal,
 				budgetBal,
-				accountsBal.Sub(budgetBal))
+				accountsBal.Sub(budgetBal)))
 
 			if !force {
 				shouldContinue, err := promptToContinue(
@@ -182,36 +186,37 @@ var commitCmd = &cobra.Command{
 					cmd.OutOrStdout(),
 					cmd.InOrStdin())
 				if err != nil {
-					logrus.Fatal(err)
+					return err
 				}
 
 				if !shouldContinue {
-					return
+					return nil
 				}
 			}
 		}
 
 		repoLoc := filepath.Join(targetDir, index.RepoName)
 		var repo persist.RepositoryReaderWriter
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, repoLoc, 10000)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, repoLoc, 10000, filesystem.RepositoryLogger(diagnostics.Logger(ctx).With("component", "envelopes")))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		commitTransactionFromFlags.Merchant, err = cmd.Flags().GetString(merchantFlag)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		commitTransactionFromFlags.Comment, err = cmd.Flags().GetString(commentFlag)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var pendingMerge bool
 		pendingMerge, err = MergeIsInProgress(ctx, repoLoc)
 		if err != nil {
-			logrus.Warn("unable to read if merge is staged, assuming not")
+			warnCommand(cmd, "unable to read if merge is staged, assuming not")
+			diagnostics.Logger(ctx).DebugContext(ctx, "merge progress check failed", "error", err)
 		}
 
 		var additionalParents []envelopes.ID
@@ -220,7 +225,7 @@ var commitCmd = &cobra.Command{
 			var mergeParams MergeParameters
 			err = MergeUnstowProgress(ctx, repoLoc, &mergeParams)
 			if err != nil {
-				logrus.Fatal("unable to read pending merge")
+				return fmt.Errorf("unable to read pending merge: %w", err)
 			}
 
 			additionalParents = mergeParams.Parents[1:]
@@ -228,20 +233,21 @@ var commitCmd = &cobra.Command{
 			if commitTransactionFromFlags.Comment == "" {
 				commitTransactionFromFlags.Comment = mergeParams.Comment
 			}
-			defer MergeResetProgress(ctx, repoLoc)
+			defer func() { result = errors.Join(result, MergeResetProgress(ctx, repoLoc)) }()
 		}
 
 		var pendingRevert bool
 		pendingRevert, err = RevertIsInProgress(ctx, repoLoc)
 		if err != nil {
-			logrus.Warn("unable to read if revert is staged, assuming not")
+			warnCommand(cmd, "unable to read if revert is staged, assuming not")
+			diagnostics.Logger(ctx).DebugContext(ctx, "revert progress check failed", "error", err)
 		}
 
 		if pendingRevert {
 			var revertParameters RevertParameters
 			err = RevertUnstowProgress(ctx, repoLoc, &revertParameters)
 			if err != nil {
-				logrus.Fatal("unable to read pending revert")
+				return fmt.Errorf("unable to read pending revert: %w", err)
 			}
 
 			commitTransactionFromFlags.Reverts = revertParameters.Reverts
@@ -250,34 +256,34 @@ var commitCmd = &cobra.Command{
 				commitTransactionFromFlags.Comment = revertParameters.Comment
 			}
 
-			defer RevertResetProgress(ctx, repoLoc)
+			defer func() { result = errors.Join(result, RevertResetProgress(ctx, repoLoc)) }()
 		}
 
 		var rawRecordId string
 		rawRecordId, err = cmd.Flags().GetString(bankRecordIDFlag)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 		commitTransactionFromFlags.RecordID = envelopes.BankRecordID(rawRecordId)
 
 		var dryrun bool
 		dryrun, err = cmd.Flags().GetBool(dryrunFlag)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		if dryrun {
 			var head persist.RefSpec
 			head, err = repo.Current(ctx)
 			if err != nil {
-				logrus.Fatal(err)
+				return err
 			}
 
 			var parent envelopes.ID
 			if head != "" {
 				parent, err = persist.Resolve(ctx, repo, head)
 				if err != nil {
-					logrus.Fatal(err)
+					return err
 				}
 			}
 
@@ -289,15 +295,16 @@ var commitCmd = &cobra.Command{
 
 			err = format.PrettyPrintTransaction(ctx, cmd.OutOrStdout(), repo, commitTransactionFromFlags)
 			if err != nil {
-				logrus.Fatal(err)
+				return err
 			}
 
 		} else {
 			err = persist.Commit(ctx, repo, commitTransactionFromFlags, additionalParents...)
 			if err != nil {
-				logrus.Fatal(err)
+				return err
 			}
 		}
+		return nil
 	},
 }
 
@@ -397,7 +404,7 @@ func calculateAmount(ctx context.Context, targetDir string) (envelopes.Balance, 
 	}
 
 	var repo persist.RepositoryReader
-	repo, err = filesystem.OpenRepositoryWithCache(ctx, filepath.Join(targetDir, index.RepoName), 10000)
+	repo, err = filesystem.OpenRepositoryWithCache(ctx, filepath.Join(targetDir, index.RepoName), 10000, filesystem.RepositoryLogger(diagnostics.Logger(ctx).With("component", "envelopes")))
 	if err != nil {
 		return envelopes.Balance{}, err
 	}

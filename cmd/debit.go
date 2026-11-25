@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"github.com/marstr/envelopes"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/index"
@@ -28,28 +27,32 @@ var debitCmd = &cobra.Command{
 	Aliases: []string{"d", "dr"},
 	Short:   `Removes funds from a category of spending.`,
 	Args:    creditDebitArgValidation,
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		rawMagnitude := args[0]
 		magnitude, err := envelopes.ParseBalance([]byte(rawMagnitude))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		for _, targetDir := range args[1:] {
 			bdg, err := index.LoadBudget(ctx, targetDir)
 			if err != nil {
-				logrus.Fatal(err)
+				return err
 			}
 
 			bdg.Balance = bdg.Balance.Sub(magnitude)
 			err = index.WriteBudget(ctx, targetDir, *bdg)
 			if err != nil {
-				logrus.Fatal(err)
+				return err
 			}
 		}
+		return nil
 	},
 }
 

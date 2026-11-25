@@ -15,8 +15,14 @@
 
 package main
 
-import "github.com/marstr/baronial/cmd"
+import (
+	"os"
+
+	"github.com/marstr/baronial/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

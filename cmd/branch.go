@@ -20,14 +20,13 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/marstr/baronial/internal/diagnostics"
 	"io"
-	"os"
 	"path"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/index"
@@ -38,27 +37,29 @@ var branchCmd = &cobra.Command{
 	Aliases: []string{"br"},
 	Short:   "Creates a branch with a given name.",
 	Args:    cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
-		var err error
 		var indexRootDir string
 		indexRootDir, err = index.RootDirectory(".")
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var repo persist.RepositoryReaderWriter
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(indexRootDir, index.RepoName), 10000)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(indexRootDir, index.RepoName), 10000, filesystem.RepositoryLogger(diagnostics.Logger(ctx).With("component", "envelopes")))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var head persist.RefSpec
 		head, err = repo.Current(ctx)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		if len(args) > 0 {
@@ -67,19 +68,20 @@ var branchCmd = &cobra.Command{
 			var target envelopes.ID
 			target, err = persist.Resolve(ctx, repo, head)
 			if err != nil {
-				logrus.Fatal(err)
+				return err
 			}
 
 			err = repo.WriteBranch(ctx, branchName, target)
 			if err != nil {
-				logrus.Fatal(err)
+				return err
 			}
 		} else {
-			err = printBranchList(ctx, os.Stdout, repo, head)
+			err = printBranchList(ctx, cmd.OutOrStdout(), repo, head)
 			if err != nil {
-				logrus.Fatal(err)
+				return err
 			}
 		}
+		return nil
 	},
 }
 

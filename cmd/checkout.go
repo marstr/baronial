@@ -16,12 +16,12 @@
 package cmd
 
 import (
+	"github.com/marstr/baronial/internal/diagnostics"
 	"path"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/index"
@@ -32,24 +32,26 @@ var checkoutCmd = &cobra.Command{
 	Aliases: []string{"ch"},
 	Short:   "Resets the index to show the balances at a particular transaction.",
 	Args:    cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		var root string
-		var err error
 		root, err = index.RootDirectory(".")
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 		root = path.Join(root, index.RepoName)
 
 		requested := persist.RefSpec(args[0])
 
 		var repo persist.RepositoryReaderWriter
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, root, 10000)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, root, 10000, filesystem.RepositoryLogger(diagnostics.Logger(ctx).With("component", "envelopes")))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var targetID envelopes.ID
@@ -57,28 +59,29 @@ var checkoutCmd = &cobra.Command{
 		if transactionID, err = repo.ReadBranch(ctx, (string)(requested)); err == nil {
 			targetID = transactionID
 		} else {
-			logrus.Warn("checking out a RefSpec that isn't a branch can cause data loss")
+			warnCommand(cmd, "checking out a RefSpec that isn't a branch can cause data loss")
 			targetID, err = persist.Resolve(ctx, repo, requested)
 			if err != nil {
-				logrus.Fatal(err)
+				return err
 			}
 		}
 
 		var target envelopes.Transaction
 		err = repo.LoadTransaction(ctx, targetID, &target)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		err = index.CheckoutTransaction(ctx, &target, root, 0660)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		err = repo.SetCurrent(ctx, requested)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
+		return nil
 	},
 }
 

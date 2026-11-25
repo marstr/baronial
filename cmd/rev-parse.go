@@ -17,11 +17,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/marstr/baronial/internal/diagnostics"
 	"path"
 
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/index"
@@ -31,27 +31,31 @@ var revParseCmd = &cobra.Command{
 	Use:   "rev-parse {refspec}",
 	Short: "Prints a realized transaction ID.",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		root, err := index.RootDirectory(".")
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var repo persist.RepositoryReader
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(root, index.RepoName), 10000)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(root, index.RepoName), 10000, filesystem.RepositoryLogger(diagnostics.Logger(ctx).With("component", "envelopes")))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		id, err := persist.Resolve(ctx, repo, persist.RefSpec(args[0]))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
-		fmt.Println(id.String())
+		_, err = fmt.Fprintln(cmd.OutOrStdout(), id.String())
+		return err
 	},
 }
 
