@@ -17,15 +17,15 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
-	"os"
 	"path"
 	"path/filepath"
 	"sort"
 
+	"github.com/marstr/baronial/internal/diagnostics"
 	"github.com/marstr/envelopes"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/index"
@@ -42,8 +42,11 @@ var balanceCmd = &cobra.Command{
 	Use:     "balance [index]",
 	Aliases: []string{"bal", "b"},
 	Short:   "Scours a baronial directory (or subdirectory) for balance information.",
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		var targetDir string
@@ -54,23 +57,23 @@ var balanceCmd = &cobra.Command{
 		}
 
 		depth, err := cmd.Flags().GetUint8(balanceDepthFlag)
-			if err != nil {
-				logrus.Fatal(err)
-			}
+		if err != nil {
+			return err
+		}
 
 		targetDir, err = filepath.Abs(targetDir)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		root, err := index.RootDirectory(targetDir)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		root, err = filepath.Abs(root)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var budgetDir string
@@ -79,7 +82,7 @@ var balanceCmd = &cobra.Command{
 		} else if _, err = index.BudgetName(targetDir); err == nil {
 			budgetDir = targetDir
 		} else {
-			logrus.Info(err)
+			diagnostics.Logger(ctx).DebugContext(ctx, "target is not a budget", "error", err)
 		}
 
 		var accountsDir string
@@ -88,33 +91,38 @@ var balanceCmd = &cobra.Command{
 		} else if _, err = index.AccountName(targetDir); err == nil {
 			accountsDir = targetDir
 		} else {
-			logrus.Info(err)
+			diagnostics.Logger(ctx).DebugContext(ctx, "target is not an account", "error", err)
 		}
 
+		if accountsDir == "" && budgetDir == "" {
+			return fmt.Errorf("%q is neither a budget nor an account", targetDir)
+		}
+		var failures []error
 		if accountsDir != "" {
 			accs, err := index.LoadAccounts(ctx, accountsDir)
 			if err == nil {
-				err = writeAccountBalances(ctx, os.Stdout, accs)
+				err = writeAccountBalances(ctx, cmd.OutOrStdout(), accs)
 				if err != nil {
-					logrus.Fatal(err)
+					return errors.Join(append(failures, err)...)
 				}
 			} else {
-				logrus.Error(err)
+				failures = append(failures, err)
 			}
 		}
 
 		if budgetDir != "" {
 			bdg, err := index.LoadBudget(ctx, budgetDir)
 			if err == nil {
-				err = writeBudgetBalances(ctx, os.Stdout, *bdg, depth)
+				err = writeBudgetBalances(ctx, cmd.OutOrStdout(), *bdg, depth)
 				if err != nil {
-					logrus.Fatal(err)
+					return errors.Join(append(failures, err)...)
 				}
 			} else {
-				logrus.Error(err)
+				failures = append(failures, err)
 			}
 		}
 
+		return errors.Join(failures...)
 	},
 	Args: cobra.MaximumNArgs(1),
 }

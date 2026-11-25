@@ -19,14 +19,13 @@ package cmd
 
 import (
 	"context"
-	"os"
+	"github.com/marstr/baronial/internal/diagnostics"
 	"path/filepath"
 	"strings"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/format"
@@ -41,32 +40,32 @@ var logCmd = &cobra.Command{
 		return nil
 	},
 	PreRunE: setPagedCobraOutput,
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		root, err := index.RootDirectory(".")
 		if err != nil {
-			logrus.Error(err)
-			return
+			return err
 		}
 
 		var repo persist.RepositoryReader
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, filepath.Join(root, index.RepoName), 10000)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, filepath.Join(root, index.RepoName), 10000, filesystem.RepositoryLogger(diagnostics.Logger(ctx).With("component", "envelopes")))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		currentRef, err := repo.Current(ctx)
 		if err != nil {
-			logrus.Error(err)
-			return
+			return err
 		}
 
 		currentID, err := persist.Resolve(ctx, repo, currentRef)
 		if err != nil {
-			logrus.Error(err)
-			return
+			return err
 		}
 
 		walker := persist.Walker{Loader: repo}
@@ -79,11 +78,6 @@ var logCmd = &cobra.Command{
 			if len(args) == 0 || containsEntity(impact, args...) {
 				err = format.ConcisePrintTransaction(ctx, cmd.OutOrStdout(), transaction)
 				if err != nil {
-					if cast, ok := err.(*os.PathError); ok {
-						if cast.Path == "|1" {
-							return nil
-						}
-					}
 					return err
 				}
 			}
@@ -91,9 +85,9 @@ var logCmd = &cobra.Command{
 		}, currentID)
 
 		if err != nil {
-			logrus.Error(err)
-			return
+			return err
 		}
+		return nil
 	},
 }
 

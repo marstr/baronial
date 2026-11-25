@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/marstr/baronial/internal/diagnostics"
 	"github.com/marstr/envelopes"
 	"github.com/marstr/units/data"
 )
@@ -35,6 +36,7 @@ const (
 
 // LoadState hydrates both accounts and the budget from the repository in the folder presented.
 func LoadState(ctx context.Context, dirname string) (*envelopes.State, error) {
+	diagnostics.Logger(ctx).DebugContext(ctx, "loading index state")
 	var retval envelopes.State
 	var err error
 
@@ -58,6 +60,7 @@ func LoadState(ctx context.Context, dirname string) (*envelopes.State, error) {
 
 // LoadAccounts reads accounts balances from the current baronial index into memory.
 func LoadAccounts(ctx context.Context, dirname string) (envelopes.Accounts, error) {
+	diagnostics.Logger(ctx).DebugContext(ctx, "loading index accounts")
 	var helper func(context.Context, string, envelopes.Accounts) (envelopes.Accounts, error)
 
 	helper = func(ctx context.Context, dirname string, previous envelopes.Accounts) (envelopes.Accounts, error) {

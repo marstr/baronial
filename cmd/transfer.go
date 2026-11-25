@@ -16,9 +16,9 @@
 package cmd
 
 import (
+	"errors"
 	"github.com/marstr/baronial/internal/index"
 	"github.com/marstr/envelopes"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -27,8 +27,11 @@ var transferCmd = &cobra.Command{
 	Aliases: []string{"t", "tran"},
 	Short:   "Moves funds from one category of spending to another.",
 	Args:    cobra.ExactArgs(3),
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		rawSrc := args[1]
@@ -36,31 +39,25 @@ var transferCmd = &cobra.Command{
 		rawMagnitude := args[0]
 		magnitude, err := envelopes.ParseBalance([]byte(rawMagnitude))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		src, err := index.LoadBudget(ctx, rawSrc)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		dest, err := index.LoadBudget(ctx, rawDest)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		src.Balance = src.Balance.Sub(magnitude)
 		dest.Balance = dest.Balance.Add(magnitude)
 
-		err = index.WriteBudget(ctx, rawSrc, *src)
-		if err != nil {
-			logrus.Error(err)
-		}
-
-		err = index.WriteBudget(ctx, rawDest, *dest)
-		if err != nil {
-			logrus.Error(err)
-		}
+		srcErr := index.WriteBudget(ctx, rawSrc, *src)
+		destErr := index.WriteBudget(ctx, rawDest, *dest)
+		return errors.Join(srcErr, destErr)
 	},
 }
 

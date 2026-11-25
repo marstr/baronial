@@ -11,15 +11,30 @@ import (
 	"golang.org/x/term"
 )
 
+var errPagerClosed = errors.New("pager closed")
+
 func setPagedCobraOutput(cmd *cobra.Command, _ []string) error {
-	output, err := NewPageWriteCloser(os.Stdout, os.Stderr)
+	outFile, ok := cmd.OutOrStdout().(*os.File)
+	if !ok {
+		return nil
+	}
+	errFile, ok := cmd.ErrOrStderr().(*os.File)
+	if !ok {
+		return nil
+	}
+	output, err := NewPageWriteCloser(outFile, errFile)
 	if err != nil {
 		return err
 	}
 	cmd.SetOut(output)
-	cmd.SetErr(output)
-	cmd.PostRunE = func(cmd *cobra.Command, args []string) error {
-		return output.Close()
+	if run, ok := cmd.Context().Value(executionKey{}).(*execution); ok {
+		run.cleanups = append(run.cleanups, func() error {
+			cmd.SetOut(outFile)
+			return output.Close()
+		})
+	} else {
+		cmd.SetOut(outFile)
+		return errors.Join(errors.New("pager requires command execution lifecycle"), output.Close())
 	}
 	return nil
 }
@@ -49,6 +64,9 @@ func NewPageWriteCloser(outFile *os.File, errFile *os.File) (io.WriteCloser, err
 			}
 			break
 		}
+		if retval.handle == nil {
+			retval.handle = outFile
+		}
 	} else {
 		retval.handle = outFile
 	}
@@ -60,31 +78,34 @@ type pageWriteCloser struct {
 	procStart sync.Once
 	handle    io.WriteCloser
 	childProc *exec.Cmd
+	started   bool
+	startErr  error
 }
 
 func (pwc *pageWriteCloser) Write(p []byte) (int, error) {
-	var err error
 	pwc.procStart.Do(func() {
 		if pwc.childProc != nil {
-			err = pwc.childProc.Start()
+			pwc.startErr = pwc.childProc.Start()
+			pwc.started = pwc.startErr == nil
 		}
 	})
-	if err != nil {
-		return 0, err
+	if pwc.startErr != nil {
+		return 0, pwc.startErr
 	}
-	return pwc.handle.Write(p)
+	n, err := pwc.handle.Write(p)
+	if pwc.childProc != nil && isPagerClosedPipe(err) {
+		return n, errPagerClosed
+	}
+	return n, err
 }
 
 func (pwc *pageWriteCloser) Close() error {
+	if pwc.childProc == nil {
+		return nil
+	}
+	if !pwc.started {
+		return pwc.handle.Close()
+	}
 	err := pwc.handle.Close()
-	if err != nil {
-		return err
-	}
-	if pwc.childProc != nil {
-		err = pwc.childProc.Wait()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return errors.Join(err, pwc.childProc.Wait())
 }

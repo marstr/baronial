@@ -16,13 +16,12 @@
 package cmd
 
 import (
-	"os"
+	"github.com/marstr/baronial/internal/diagnostics"
 	"path"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/format"
@@ -36,39 +35,43 @@ var showCmd = &cobra.Command{
 displayed. However, the particular impacts to accounts and budgets are hidden
 for the sake of brevity. This command shows all known details of a transaction.`,
 	Args: cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		root, err := index.RootDirectory(".")
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 		root = path.Join(root, index.RepoName)
 
 		var repo persist.RepositoryReader
-		repo, err = filesystem.OpenRepositoryWithCache(ctx, root, 10000)
+		repo, err = filesystem.OpenRepositoryWithCache(ctx, root, 10000, filesystem.RepositoryLogger(diagnostics.Logger(ctx).With("component", "envelopes")))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var targetID envelopes.ID
 
 		targetID, err = persist.Resolve(ctx, repo, persist.RefSpec(args[0]))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		var target envelopes.Transaction
 		err = repo.LoadTransaction(ctx, targetID, &target)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
-		err = format.PrettyPrintTransaction(ctx, os.Stdout, repo, target)
+		err = format.PrettyPrintTransaction(ctx, cmd.OutOrStdout(), repo, target)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
+		return nil
 	},
 }
 

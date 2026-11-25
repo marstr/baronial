@@ -1,13 +1,13 @@
 module github.com/marstr/baronial
 
 require (
-	github.com/marstr/envelopes v0.5.1-0.20250726040416-21d6874f4b76
+	github.com/marstr/envelopes v0.5.1-0.20261123170545-eb8f6a8694c5
 	github.com/marstr/units v1.0.1
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/sirupsen/logrus v1.8.3
 	github.com/spf13/cast v1.3.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.3.1
+	golang.org/x/sys v0.38.0
 	golang.org/x/term v0.37.0
 )
 
@@ -23,7 +23,6 @@ require (
 	github.com/spf13/afero v1.1.2 // indirect
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
-	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

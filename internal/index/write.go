@@ -17,27 +17,30 @@ package index
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 
+	"github.com/marstr/baronial/internal/diagnostics"
 	"github.com/marstr/envelopes"
 )
 
 // WriteBudget takes the memoized Budget and commits it to the current baronial index.
-func WriteBudget(ctx context.Context, targetDir string, budget envelopes.Budget) error {
+func WriteBudget(ctx context.Context, targetDir string, budget envelopes.Budget) (err error) {
 	if len(budget.Balance) == 0 {
 		return nil
 	}
 
 	targetFile := filepath.Join(targetDir, cashName)
+	diagnostics.Logger(ctx).DebugContext(ctx, "writing index balance")
 	handle, err := os.Create(targetFile)
 	if err != nil {
 		return err
 	}
-	defer handle.Close()
+	defer func() { err = errors.Join(err, handle.Close()) }()
 
 	return writeBalance(ctx, handle, budget.Balance)
 }

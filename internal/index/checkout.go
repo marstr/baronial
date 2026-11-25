@@ -20,12 +20,14 @@ import (
 	"os"
 	"path"
 
+	"github.com/marstr/baronial/internal/diagnostics"
 	"github.com/marstr/envelopes"
 )
 
 // CheckoutState offers a shortcut to calling Checkout, should you know that the ID that has been
 // handed to you points to an envelopes.State.
 func CheckoutState(ctx context.Context, state *envelopes.State, targetDir string, perm os.FileMode) error {
+	diagnostics.Logger(ctx).DebugContext(ctx, "checking out index state")
 	targetDir, err := RootDirectory(targetDir)
 	if err != nil {
 		return err

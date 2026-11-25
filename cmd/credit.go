@@ -16,11 +16,9 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/marstr/envelopes"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/index"
@@ -31,28 +29,32 @@ var creditCmd = &cobra.Command{
 	Aliases: []string{"c", "cr"},
 	Short:   "Makes funds available for one or more category of spending.",
 	Args:    creditDebitArgValidation,
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		rawMagnitude := args[0]
 		magnitude, err := envelopes.ParseBalance([]byte(rawMagnitude))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		for _, rawBudget := range args[1:] {
 			bdg, err := index.LoadBudget(ctx, rawBudget)
 			if err != nil {
-				logrus.Fatal(err)
+				return err
 			}
 
 			bdg.Balance = bdg.Balance.Add(magnitude)
 			err = index.WriteBudget(ctx, rawBudget, *bdg)
 			if err != nil {
-				logrus.Fatal(err)
+				return err
 			}
 		}
+		return nil
 	},
 }
 
@@ -61,16 +63,17 @@ func init() {
 }
 
 func creditDebitArgValidation(cmd *cobra.Command, args []string) error {
-	var cancel context.CancelFunc
-	ctx, _ := RootContext(cmd)
-	ctx, cancel = context.WithCancel(ctx)
+	ctx, cancel, err := RootContext(cmd)
+	if err != nil {
+		return err
+	}
 	defer cancel()
 
 	if argCount := len(args); argCount < 2 {
 		return fmt.Errorf("too few arguments (%d). %q requires at least a balance and one budget or account", argCount, cmd.Name())
 	}
 
-	_, err := envelopes.ParseBalance([]byte(args[0]))
+	_, err = envelopes.ParseBalance([]byte(args[0]))
 	if err != nil {
 		return fmt.Errorf("%q not recognized as an amount", args[0])
 	}

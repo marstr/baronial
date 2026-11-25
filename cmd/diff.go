@@ -20,12 +20,12 @@ package cmd
 import (
 	"context"
 	"errors"
+	"github.com/marstr/baronial/internal/diagnostics"
 	"path"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/format"
@@ -38,27 +38,31 @@ var diffCmd = &cobra.Command{
 	Long:    ``,
 	Args:    cobra.MaximumNArgs(2),
 	PreRunE: setPagedCobraOutput,
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		repoRoot, err := index.RootDirectory(".")
 		if err != nil {
-			return
+			return err
 		}
 
 		var left, right *envelopes.State
 		left, right, err = getDiffStates(ctx, args, repoRoot)
 		if err != nil {
-			return
+			return err
 		}
 
 		diff := left.Subtract(*right)
 
 		err = format.PrettyPrintImpact(cmd.OutOrStdout(), diff)
 		if err != nil {
-			return
+			return err
 		}
+		return nil
 	},
 }
 
@@ -67,9 +71,9 @@ func getDiffStates(ctx context.Context, args []string, indexRoot string) (*envel
 	var left, right *envelopes.State
 	var repo persist.RepositoryReader
 
-	repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(indexRoot, index.RepoName), 10000)
+	repo, err = filesystem.OpenRepositoryWithCache(ctx, path.Join(indexRoot, index.RepoName), 10000, filesystem.RepositoryLogger(diagnostics.Logger(ctx).With("component", "envelopes")))
 	if err != nil {
-		logrus.Fatal(err)
+		return nil, nil, err
 	}
 
 	loadFromRepository := func(ctx context.Context, rs persist.RefSpec) (*envelopes.State, error) {

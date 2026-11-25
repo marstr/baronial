@@ -16,12 +16,13 @@
 package cmd
 
 import (
+	"fmt"
+	"github.com/marstr/baronial/internal/diagnostics"
 	"os"
 
 	"github.com/marstr/envelopes"
 	"github.com/marstr/envelopes/persist"
 	"github.com/marstr/envelopes/persist/filesystem"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/marstr/baronial/internal/index"
@@ -31,8 +32,11 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Creates a new Baronial repository in the current working directory.",
 	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := RootContext(cmd)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel, err := RootContext(cmd)
+		if err != nil {
+			return err
+		}
 		defer cancel()
 
 		const initCmdFailurePrefix = "unable to initialize repository: "
@@ -51,24 +55,25 @@ var initCmd = &cobra.Command{
 			if os.IsExist(err) {
 				// Intentionally Left Blank
 			} else if err != nil {
-				logrus.Fatal(initCmdFailurePrefix, err)
+				return fmt.Errorf("%s%w", initCmdFailurePrefix, err)
 			}
 		}
 
-		repo, err := filesystem.OpenRepositoryWithCache(ctx, index.RepoName, 10000)
+		repo, err := filesystem.OpenRepositoryWithCache(ctx, index.RepoName, 10000, filesystem.RepositoryLogger(diagnostics.Logger(ctx).With("component", "envelopes")))
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		err = repo.WriteBranch(ctx, initialBranch, envelopes.ID{})
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
 
 		err = repo.SetCurrent(ctx, initialBranch)
 		if err != nil {
-			logrus.Fatal(err)
+			return err
 		}
+		return nil
 	},
 }
 
