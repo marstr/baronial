@@ -168,53 +168,6 @@ $ baronial log accounts/us_bank/checking
 
 Providing the extra parameter `accounts/us_bank/checking` will filter the transactions that are printed to just the ones
 that touched that account. 
-## Diagnostic Logs and Bug Reports
-
-Command results go to stdout; errors and actionable warnings are plain text on stderr.
-Diagnostic logs are separate JSON-lines files, written at **Info** level by default.
-Use these global flags with any command:
-
-```bash
-baronial --log-level=debug balance
-baronial --log-file=/path/to/baronial.log balance
-baronial --log-level=off balance
-```
-
-Levels are `debug`, `info`, `warn`, `error`, and `off`. Info records command lifecycle
-and failures; Debug adds index and envelopes persistence diagnostics. Changing the
-diagnostic level never hides user-facing errors or safety warnings.
-
-Default locations:
-
-| Platform | Active log file |
-| --- | --- |
-| Linux | `$XDG_STATE_HOME/baronial/baronial.log`, or `~/.local/state/baronial/baronial.log` |
-| macOS | `~/Library/Logs/baronial/baronial.log` |
-| Windows | `%LOCALAPPDATA%\baronial\logs\baronial.log` |
-
-Each destination holds up to 5 MiB per file and three backups (`.1` is newest),
-approximately **20 MiB total** plus small `.lock` and `.age` metadata files.
-Concurrent commands coordinate rotation. Logs older than seven days are removed
-on subsequent invocations/writes, including old content in an active file;
-there is no background cleanup while Baronial is not running.
-Limits apply separately to each destination selected with `--log-file`.
-New log directories and files are private to the user on Unix.
-
-If logging cannot open, write, rotate, or acquire its lock, Baronial warns once
-on stderr and continues the command without diagnostics. Invalid flag values
-still fail before financial changes. `--log-level=off` creates no log files.
-
-When reporting a bug, attach the active log and relevant numbered backups to
-the GitHub issue; do not attach the metadata files. If more detail is needed,
-reproduce with `--log-level=debug` **only when repeating the command is safe**.
-Logs are never uploaded automatically.
-
-**Inspect logs before uploading.** Baronial avoids logging financial payloads,
-amounts, merchant/comments, bank-record IDs, and raw command arguments, and
-classifies error values rather than dumping their text. Filesystem paths,
-reference names, object IDs, and other diagnostic details can still be sensitive;
-logs are not guaranteed to be anonymized.
-
 ## Install
 
 ### Debian and Ubuntu

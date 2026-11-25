@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/gofrs/flock"
 )
 
 type rotatingWriter struct {
@@ -24,7 +22,7 @@ type rotatingWriter struct {
 	warn     func(error)
 	failed   bool
 	closed   bool
-	lock     *flock.Flock
+	lock     *os.File
 }
 
 func (w *rotatingWriter) initialize() error {
@@ -48,13 +46,9 @@ func (w *rotatingWriter) initialize() error {
 		return err
 	}
 	if err := handle.Chmod(0600); err != nil {
-		_ = handle.Close()
-		return err
+		return errors.Join(err, handle.Close())
 	}
-	if err := handle.Close(); err != nil {
-		return err
-	}
-	w.lock = flock.New(lockPath)
+	w.lock = handle
 	return w.locked(func() error { return w.prune() })
 }
 
@@ -75,14 +69,23 @@ func checkRegular(path string) error {
 func (w *rotatingWriter) locked(action func() error) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 	defer cancel()
-	locked, err := w.lock.TryLockContext(ctx, 10*time.Millisecond)
-	if err != nil {
-		return err
+	timer := time.NewTicker(10 * time.Millisecond)
+	defer timer.Stop()
+	for {
+		locked, err := tryFileLock(w.lock)
+		if err != nil {
+			return err
+		}
+		if locked {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("timed out locking diagnostic file: %w", ctx.Err())
+		case <-timer.C:
+		}
 	}
-	if !locked {
-		return errors.New("timed out locking diagnostic file")
-	}
-	defer func() { err = errors.Join(err, w.lock.Unlock()) }()
+	defer func() { err = errors.Join(err, unlockFile(w.lock)) }()
 	return action()
 }
 
@@ -217,7 +220,7 @@ func (w *rotatingWriter) Write(data []byte) (int, error) {
 		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
-		if info != nil && info.Size()+int64(len(data)) > w.maxBytes {
+		if info != nil && int64(len(data)) > w.maxBytes-info.Size() {
 			if err := w.markAge(); err != nil {
 				return err
 			}
@@ -249,6 +252,9 @@ func (w *rotatingWriter) Write(data []byte) (int, error) {
 func (w *rotatingWriter) Close() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	if w.closed {
+		return nil
+	}
 	w.closed = true
 	if w.lock != nil {
 		if err := w.lock.Close(); err != nil {

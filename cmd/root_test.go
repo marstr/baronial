@@ -57,7 +57,10 @@ func TestCLIOutputAndDiagnostics(t *testing.T) {
 			}
 		})
 	}
-	for _, flag := range []string{"--log-level=typo", "--timeout=-1s"} {
+	for _, flag := range []string{
+		"--log-level=typo", "--timeout=-1s", "--log-max-bytes=0", "--log-max-bytes=-1",
+		"--log-max-bytes=not-a-size", "--log-max-bytes=9223372036854775808",
+	} {
 		dir := t.TempDir()
 		stdout, stderr, err := run(dir, "init", flag)
 		if err == nil || stdout != "" || stderr == "" {
@@ -101,6 +104,25 @@ func TestCLIOutputAndDiagnostics(t *testing.T) {
 			}
 		})
 	}
+	t.Run("configured-rotation-size", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "diagnostics.log")
+		for n := 0; n < 2; n++ {
+			stdout, stderr, err := run(dir, "init", "--log-file", path, "--log-max-bytes=512")
+			if err != nil || stdout != "" || stderr != "" {
+				t.Fatalf("configured size failed: %q, %q, %v", stdout, stderr, err)
+			}
+		}
+		for _, file := range []string{path, path + ".1"} {
+			info, err := os.Stat(file)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if info.Size() > 512 {
+				t.Fatalf("CLI rotation size ignored: %s is %d bytes", file, info.Size())
+			}
+		}
+	})
 	t.Run("unwritable-logs", func(t *testing.T) {
 		dir := t.TempDir()
 		path := filepath.Join(dir, "not-a-log")
@@ -189,6 +211,7 @@ func TestExecutionCleanupAndFreshContext(t *testing.T) {
 	root := &cobra.Command{Use: "test", SilenceErrors: true, SilenceUsage: true}
 	root.PersistentFlags().String("log-level", "off", "")
 	root.PersistentFlags().String("log-file", "", "")
+	root.PersistentFlags().Int64(logMaxBytesFlag, int64(diagnostics.DefaultMaxBytes), "")
 	root.PersistentFlags().Duration(timeoutFlag, 0, "")
 	var stderr bytes.Buffer
 	root.SetErr(&stderr)
@@ -240,6 +263,7 @@ func TestPagedFailureKeepsErrorsOnStderr(t *testing.T) {
 	root := &cobra.Command{Use: "test", SilenceErrors: true, SilenceUsage: true}
 	root.PersistentFlags().String("log-level", "off", "")
 	root.PersistentFlags().String("log-file", "", "")
+	root.PersistentFlags().Int64(logMaxBytesFlag, int64(diagnostics.DefaultMaxBytes), "")
 	root.PersistentFlags().Duration(timeoutFlag, 0, "")
 	out, err := os.CreateTemp(t.TempDir(), "stdout")
 	if err != nil {
@@ -300,6 +324,7 @@ func TestLaterLoggingFailureDoesNotFailCommand(t *testing.T) {
 	root := &cobra.Command{Use: "test", SilenceErrors: true, SilenceUsage: true}
 	root.PersistentFlags().String("log-level", "info", "")
 	root.PersistentFlags().String("log-file", path, "")
+	root.PersistentFlags().Int64(logMaxBytesFlag, int64(diagnostics.DefaultMaxBytes), "")
 	root.PersistentFlags().Duration(timeoutFlag, 0, "")
 	var stdout, stderr bytes.Buffer
 	root.SetOut(&stdout)

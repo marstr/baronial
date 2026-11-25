@@ -32,9 +32,10 @@ import (
 )
 
 const (
-	timeoutFlag    = "timeout"
-	timeoutDefault = 0
-	timeoutUsage   = `The maximum time to allow the command to run. The default is '0', which will let the command run indefinitely.
+	logMaxBytesFlag = "log-max-bytes"
+	timeoutFlag     = "timeout"
+	timeoutDefault  = 0
+	timeoutUsage    = `The maximum time to allow the command to run. The default is '0', which will let the command run indefinitely.
 
 The value should be a positive decimal number, with an optional fraction and a unit suffix. For example, "300s", "1.5h", or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", or "h".`
 )
@@ -101,6 +102,13 @@ func (run *execution) prepare(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
+	maxBytes, err := cmd.Flags().GetInt64(logMaxBytesFlag)
+	if err != nil {
+		return err
+	}
+	if maxBytes <= 0 {
+		return fmt.Errorf("--%s must be positive", logMaxBytesFlag)
+	}
 	timeout, err := cmd.Flags().GetDuration(timeoutFlag)
 	if err != nil {
 		return err
@@ -127,7 +135,7 @@ func (run *execution) prepare(cmd *cobra.Command) error {
 			}
 		}
 		if enabled {
-			run.logger, run.logFile = diagnostics.Open(path, level, warn)
+			run.logger, run.logFile = diagnostics.Open(path, level, maxBytes, warn)
 			run.logger = run.logger.With(
 				"command", cmd.Name(), "invocation", rand.Text(),
 				"version", version, "revision", revision,
@@ -224,6 +232,7 @@ func init() {
 	rootCmd.PersistentFlags().Duration(timeoutFlag, timeoutDefault, timeoutUsage)
 	rootCmd.PersistentFlags().String("log-level", "info", "Diagnostic level: debug, info, warn, error, or off.")
 	rootCmd.PersistentFlags().String("log-file", "", "Rotated diagnostic file path (default: per-user Baronial logs).")
+	rootCmd.PersistentFlags().Int64(logMaxBytesFlag, int64(diagnostics.DefaultMaxBytes), "Maximum bytes per diagnostic file (default: 5 MiB).")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

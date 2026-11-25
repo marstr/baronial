@@ -13,8 +13,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/gofrs/flock"
 )
 
 func newTestWriter(t *testing.T, path string, limit int64) *rotatingWriter {
@@ -34,7 +32,7 @@ func TestJSONFilteringAndSensitiveErrors(t *testing.T) {
 	for _, level := range []slog.Level{slog.LevelInfo, slog.LevelDebug} {
 		t.Run(level.String(), func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "logs", "baronial.log")
-			logger, closer := Open(path, level, func(err error) { t.Fatal(err) })
+			logger, closer := Open(path, level, int64(DefaultMaxBytes), func(err error) { t.Fatal(err) })
 			defer closer.Close()
 			logger.Debug("detail", "operation", "resolve")
 			logger.Error("failure", "error", fmt.Errorf("private bank-id and USD 123.45: %w", os.ErrPermission))
@@ -121,6 +119,32 @@ func TestRotationBoundsAndRetention(t *testing.T) {
 	}
 }
 
+func TestOpenUsesConfiguredSize(t *testing.T) {
+	for _, limit := range []int64{256, 512} {
+		t.Run(fmt.Sprint(limit), func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "diagnostics.log")
+			logger, closer := Open(path, slog.LevelInfo, limit, func(err error) { t.Fatal(err) })
+			defer closer.Close()
+			for n := 0; n < 12; n++ {
+				logger.Info(strings.Repeat("x", 80))
+			}
+			for n := 0; n <= 3; n++ {
+				file := path
+				if n > 0 {
+					file += fmt.Sprintf(".%d", n)
+				}
+				info, err := os.Stat(file)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if info.Size() > limit {
+					t.Fatalf("configured limit %d ignored: %s is %d bytes", limit, file, info.Size())
+				}
+			}
+		})
+	}
+}
+
 func TestStaleActiveWithoutAgeMarker(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "diagnostics.log")
 	if err := os.WriteFile(path, []byte("old\n"), 0600); err != nil {
@@ -164,11 +188,20 @@ func TestLoggingFailuresWarnOnce(t *testing.T) {
 				}
 			}
 			if failure == "lock" {
-				blocker := flock.New(path + ".lock")
-				if err := blocker.Lock(); err != nil {
+				blocker, err := os.OpenFile(path+".lock", os.O_RDWR, 0600)
+				if err != nil {
 					t.Fatal(err)
 				}
 				defer blocker.Close()
+				locked, err := tryFileLock(blocker)
+				if err != nil || !locked {
+					t.Fatalf("acquire competing lock: %v, %v", locked, err)
+				}
+				defer func() {
+					if err := unlockFile(blocker); err != nil {
+						t.Errorf("release competing lock: %v", err)
+					}
+				}()
 			}
 			message := []byte("message\n")
 			if failure == "oversized" {

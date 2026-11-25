@@ -14,7 +14,12 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/marstr/units/data"
 )
+
+// DefaultMaxBytes is the maximum log-file size unless the caller overrides it.
+const DefaultMaxBytes = 5 * data.Megabyte
 
 type contextKey struct{}
 
@@ -126,12 +131,14 @@ func safeAttribute(_ []string, attr slog.Attr) slog.Attr {
 
 // Open creates a JSON logger. Storage failures warn once and disable diagnostics,
 // without becoming failures of the financial command.
-func Open(path string, level slog.Level, warn func(error)) (*slog.Logger, io.Closer) {
+func Open(path string, level slog.Level, maxBytes int64, warn func(error)) (*slog.Logger, io.Closer) {
 	writer := &rotatingWriter{
-		path: path, maxBytes: 5 * 1024 * 1024, backups: 3,
+		path: path, maxBytes: maxBytes, backups: 3,
 		maxAge: 7 * 24 * time.Hour, warn: warn,
 	}
-	if err := writer.initialize(); err != nil {
+	if maxBytes <= 0 {
+		writer.fail(errors.New("maximum diagnostic file size must be positive"))
+	} else if err := writer.initialize(); err != nil {
 		writer.fail(err)
 	}
 	logger := slog.New(slog.NewJSONHandler(writer, &slog.HandlerOptions{
